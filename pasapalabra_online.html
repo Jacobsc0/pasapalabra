@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pasapalabra Online</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f5f4f0; min-height: 100vh; }
+#app { max-width: 520px; margin: 0 auto; padding: 1rem; }
+
+.header { text-align: center; margin-bottom: 1.25rem; }
+.header h1 { font-size: 22px; font-weight: 500; letter-spacing: 3px; color: #1a1a1a; }
+.header .subtitle { font-size: 13px; color: #888; margin-top: 4px; }
+
+.scoreboard { display: flex; gap: 12px; justify-content: center; margin-bottom: 1.25rem; }
+.player-card {
+  flex: 1; max-width: 220px; background: #fff;
+  border: 0.5px solid #ddd; border-radius: 12px;
+  padding: 12px 16px; text-align: center; transition: border 0.2s;
+}
+.player-card.active { border: 2px solid #3b82f6; }
+.player-card.me-card { background: #eff6ff; }
+.player-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.player-score { font-size: 28px; font-weight: 500; color: #3b82f6; }
+.player-meta { font-size: 11px; color: #999; margin-top: 2px; }
+
+.rosco-container { position: relative; width: 320px; height: 320px; margin: 0 auto 1.25rem; }
+.rosco-svg { width: 100%; height: 100%; }
+.center-panel {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 140px; text-align: center; pointer-events: none;
+}
+.timer-display { font-size: 30px; font-weight: 500; color: #1a1a1a; font-variant-numeric: tabular-nums; }
+.timer-warning { color: #ef4444 !important; }
+.timer-label { font-size: 11px; color: #999; }
+.current-letter-badge {
+  display: inline-block; background: #eff6ff; color: #3b82f6;
+  font-size: 20px; font-weight: 500;
+  width: 40px; height: 40px; line-height: 40px;
+  border-radius: 50%; margin-bottom: 4px;
+}
+
+.status-bar { display: flex; gap: 10px; justify-content: center; font-size: 12px; color: #888; margin-bottom: 1rem; flex-wrap: wrap; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+.question-panel {
+  background: #fff; border: 0.5px solid #ddd;
+  border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; min-height: 80px;
+}
+.q-label { font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+.q-text { font-size: 15px; color: #1a1a1a; line-height: 1.5; }
+.q-hint { font-size: 12px; color: #888; margin-top: 6px; }
+
+.feedback-banner {
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 0.75rem;
+  font-size: 13px; display: none; align-items: center; gap: 8px;
+}
+.feedback-banner.correct { background: #f0fdf4; border: 0.5px solid #86efac; color: #166534; display: flex; }
+.feedback-banner.wrong { background: #fef2f2; border: 0.5px solid #fca5a5; color: #991b1b; display: flex; }
+.feedback-banner.passed { background: #fffbeb; border: 0.5px solid #fcd34d; color: #92400e; display: flex; }
+
+.answer-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
+.answer-row input {
+  flex: 1; height: 40px; padding: 0 12px;
+  border-radius: 8px; border: 0.5px solid #bbb;
+  background: #fff; color: #1a1a1a; font-size: 15px;
+}
+.answer-row input:focus { outline: none; border-color: #3b82f6; }
+.answer-row input:disabled { background: #f5f4f0; color: #999; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
+button {
+  padding: 8px 16px; border-radius: 8px; border: 0.5px solid #bbb;
+  background: transparent; color: #1a1a1a;
+  font-size: 13px; cursor: pointer; transition: background 0.15s, transform 0.1s;
+}
+button:hover { background: #eee; }
+button:active { transform: scale(0.97); }
+button:disabled { opacity: 0.4; cursor: default; transform: none; }
+button.primary { background: #3b82f6; color: #fff; border-color: transparent; }
+button.primary:hover { background: #2563eb; }
+button.danger { color: #dc2626; border-color: #fca5a5; }
+button.warn { color: #d97706; border-color: #fcd34d; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+}
+.modal-box {
+  background: #fff; border-radius: 16px; border: 0.5px solid #ddd;
+  padding: 2rem; text-align: center; max-width: 400px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-box h2 { font-size: 22px; font-weight: 500; margin-bottom: 0.5rem; color: #1a1a1a; }
+.modal-box p { color: #888; font-size: 14px; margin-bottom: 1.25rem; }
+.modal-box input {
+  width: 100%; height: 40px; padding: 0 12px; margin-bottom: 10px;
+  border-radius: 8px; border: 0.5px solid #bbb;
+  background: #f5f4f0; color: #1a1a1a; font-size: 15px;
+}
+
+.room-code-display {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;
+  padding: 1rem; margin: 1rem 0; letter-spacing: 4px;
+  font-size: 28px; font-weight: 500; color: #1d4ed8;
+}
+.waiting-dots::after {
+  content: ''; animation: dots 1.5s infinite;
+}
+@keyframes dots {
+  0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''}
+}
+.conn-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 20px; font-size: 12px; padding: 3px 10px; margin-bottom: 0.75rem;
+}
+.conn-badge.online { background: #f0fdf4; color: #166534; border: 0.5px solid #86efac; }
+.conn-badge.offline { background: #fef2f2; color: #991b1b; border: 0.5px solid #fca5a5; }
+.conn-dot { width: 6px; height: 6px; border-radius: 50%; }
+.conn-badge.online .conn-dot { background: #22c55e; }
+.conn-badge.offline .conn-dot { background: #ef4444; }
+
+.spectator-bar {
+  background: #fffbeb; border: 0.5px solid #fcd34d; border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; color: #92400e; text-align: center; margin-bottom: 0.75rem;
+}
+
+.tab-row { display: flex; border-bottom: 0.5px solid #eee; margin-bottom: 1rem; }
+.tab-btn { flex: 1; padding: 8px; font-size: 13px; background: transparent; border: none; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -0.5px; }
+.tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+.result-letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; text-align: left; margin: 1rem 0; }
+.result-letter-row { background: #f5f4f0; border-radius: 8px; padding: 8px 10px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+.result-letter-row .rl-letter { font-size: 16px; font-weight: 500; flex-shrink: 0; width: 22px; }
+.result-letter-row .rl-info { flex: 1; min-width: 0; }
+.result-letter-row .rl-ans { font-size: 11px; color: #888; word-break: break-word; }
+.result-letter-row.correct-row { background: #f0fdf4; }
+.result-letter-row.wrong-row { background: #fef2f2; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #eee; font-size: 14px; }
+.summary-row:last-child { border-bottom: none; }
+
+.time-picker { display: flex; gap: 8px; justify-content: center; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOBBY -->
+  <div id="lobby-screen">
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h2>Pasapalabra 🎯</h2>
+        <p>Juega online con tu pareja</p>
+        <div id="conn-status" class="conn-badge offline"><div class="conn-dot"></div> Conectando...</div>
+        <input id="my-name" placeholder="Tu nombre" maxlength="20" style="margin-bottom:16px;" />
+        <div style="display:flex;gap:10px;margin-bottom:0.5rem;">
+          <button class="primary" onclick="createRoom()" id="btn-create" style="flex:1;padding:12px;" disabled>Crear sala</button>
+          <button onclick="showJoin()" id="btn-join-show" style="flex:1;padding:12px;" disabled>Unirse</button>
+        </div>
+        <div id="join-area" style="display:none;margin-top:10px;">
+          <input id="room-code-input" placeholder="Código de sala (4 letras)" maxlength="4" style="text-transform:uppercase;letter-spacing:4px;font-size:18px;text-align:center;" />
+          <button class="primary" onclick="joinRoom()" style="width:100%;padding:10px;margin-top:6px;">Entrar a la sala</button>
+        </div>
+        <div id="lobby-msg" style="font-size:13px;color:#888;margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAITING -->
+  <div id="waiting-screen" style="display:none;">
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h2>Sala creada ✅</h2>
+        <p>Comparte este código con tu novia</p>
+        <div class="room-code-display" id="display-room-code">----</div>
+        <p style="font-size:13px;color:#888;">Esperando al otro jugador<span class="waiting-dots"></span></p>
+        <div style="margin-top:1rem;">
+          <label style="font-size:13px;color:#888;display:block;margin-bottom:6px;">Tiempo por ronda</label>
+          <div class="time-picker">
+            <button id="t60" class="primary" onclick="selectTime(60)">60 seg</button>
+            <button id="t90" onclick="selectTime(90)">90 seg</button>
+            <button id="t120" onclick="selectTime(120)">120 seg</button>
+          </div>
+        </div>
+        <button onclick="cancelRoom()" class="danger" style="margin-top:1rem;width:100%;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-screen" style="display:none;">
+    <div class="header">
+      <h1>PASAPALABRA</h1>
+      <div class="subtitle" id="turn-label">—</div>
+    </div>
+
+    <div id="conn-game-badge" class="conn-badge online" style="display:flex;justify-content:center;margin-bottom:0.75rem;">
+      <div class="conn-dot"></div> Online
+    </div>
+
+    <div class="scoreboard">
+      <div class="player-card" id="card-0">
+        <div class="player-name" id="name-0">—</div>
+        <div class="player-score" id="score-0">0</div>
+        <div class="player-meta" id="meta-0">0 ✓</div>
+      </div>
+      <div class="player-card" id="card-1">
+        <div class="player-name" id="name-1">—</div>
+        <div class="player-score" id="score-1">0</div>
+        <div class="player-meta" id="meta-1">0 ✓</div>
+      </div>
+    </div>
+
+    <div class="rosco-container">
+      <svg class="rosco-svg" viewBox="0 0 320 320" id="rosco-svg"></svg>
+      <div class="center-panel">
+        <div class="current-letter-badge" id="cur-letter">?</div>
+        <div class="timer-display" id="timer">—</div>
+        <div class="timer-label">segundos</div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span><span class="status-dot" style="background:#22c55e"></span>Correcta</span>
+      <span><span class="status-dot" style="background:#ef4444"></span>Incorrecta</span>
+      <span><span class="status-dot" style="background:#f59e0b"></span>Pasada</span>
+      <span><span class="status-dot" style="background:#ccc"></span>Pendiente</span>
+    </div>
+
+    <div id="spectator-bar" class="spectator-bar" style="display:none;">
+      👀 Turno de <span id="spectator-name"></span> — espera tu turno
+    </div>
+
+    <div class="question-panel">
+      <div class="q-label">Pregunta</div>
+      <div class="q-text" id="q-text">Esperando...</div>
+      <div class="q-hint" id="q-hint"></div>
+    </div>
+
+    <div class="feedback-banner" id="feedback-banner">
+      <span id="feedback-text"></span>
+    </div>
+
+    <div class="answer-row">
+      <input id="answer-input" placeholder="Escribe tu respuesta..." onkeydown="if(event.key==='Enter')checkAnswer()" disabled />
+      <button class="primary" onclick="checkAnswer()" id="btn-confirm" disabled>Confirmar</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="warn" onclick="passLetter()" id="btn-pass" disabled>Pasapalabra</button>
+      <button class="danger" onclick="wrongAnswer()" id="btn-wrong" disabled>Incorrecta</button>
+      <button onclick="endTurn()" id="btn-endturn" disabled>Terminar turno</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="result-screen" style="display:none;">
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h2 id="winner-title">¡Fin!</h2>
+        <p id="winner-sub"></p>
+        <div class="tab-row">
+          <button class="tab-btn active" id="tab-summary" onclick="showTab('summary')">Resumen</button>
+          <button class="tab-btn" id="tab-p0" onclick="showTab('p0')">—</button>
+          <button class="tab-btn" id="tab-p1" onclick="showTab('p1')">—</button>
+        </div>
+        <div id="tab-content-summary"></div>
+        <div id="tab-content-p0" style="display:none;"></div>
+        <div id="tab-content-p1" style="display:none;"></div>
+        <button class="primary" onclick="location.reload()" style="width:100%;padding:12px;font-size:15px;margin-top:1rem;">Jugar de nuevo</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, remove, off } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCryp1j0Xz0rqlFncqZDP4FPJbGX-1FnPg",
+  authDomain: "pasapalabra-jacob.firebaseapp.com",
+  projectId: "pasapalabra-jacob",
+  storageBucket: "pasapalabra-jacob.firebasestorage.app",
+  messagingSenderId: "930192856966",
+  appId: "1:930192856966:web:1efab270e3827ba523be07",
+  databaseURL: "https://pasapalabra-jacob-default-rtdb.firebaseio.com"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+const LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','X'];
+
+const QUESTION_BANK = {
+  A:[{q:"Con la A. Continente más grande del mundo.",ans:"ASIA"},{q:"Con la A. Capital de Argentina.",ans:"BUENOS AIRES"},{q:"Con la A. Color del cielo despejado.",ans:"AZUL"},{q:"Con la A. Primer mes del año en español.",ans:"ENERO"},{q:"Con la A. Fruta tropical amarilla alargada.",ans:"ANANA",alt:["PIÑA"]},{q:"Con la A. País que tiene el Machu Picchu.",ans:"PERU"},{q:"Con la A. Instrumento de cuerda triangular que se toca vertical.",ans:"ARPA"}],
+  B:[{q:"Con la B. Líquido rojo que circula por las venas.",ans:"SANGRE"},{q:"Con la B. País más grande de América del Sur.",ans:"BRASIL"},{q:"Con la B. Animal marino mamífero más grande del mundo.",ans:"BALLENA"},{q:"Con la B. Ciudad donde está el Big Ben.",ans:"LONDRES"},{q:"Con la B. Deporte donde se meten puntos con la mano en aro.",ans:"BALONCESTO"},{q:"Con la B. Fruto pequeño azul oscuro muy nutritivo.",ans:"ARANDANO",alt:["BLUEBERRY"]},{q:"Con la B. Instrumento de viento de metal con pistones.",ans:"TROMPETA"}],
+  C:[{q:"Con la C. Animal doméstico que maúlla.",ans:"GATO",alt:["CAT"]},{q:"Con la C. Capital de Francia.",ans:"PARIS"},{q:"Con la C. País sudamericano con capital en Santiago.",ans:"CHILE"},{q:"Con la C. Ave de plumaje multicolor famosa por hablar.",ans:"COTORRA",alt:["LORO"]},{q:"Con la C. Flor roja símbolo del amor.",ans:"CLAVEL",alt:["ROSA"]},{q:"Con la C. Planeta más cercano al Sol.",ans:"MERCURIO"},{q:"Con la C. Proceso por el que las plantas producen energía con luz.",ans:"FOTOSINTESIS"}],
+  D:[{q:"Con la D. Baile típico de República Dominicana.",ans:"MERENGUE"},{q:"Con la D. Mes de las fiestas navideñas.",ans:"DICIEMBRE"},{q:"Con la D. País europeo cuya capital es Copenhague.",ans:"DINAMARCA"},{q:"Con la D. Figura geométrica de cuatro lados iguales y ángulos rectos.",ans:"CUADRADO"},{q:"Con la D. Animal grande con trompa.",ans:"ELEFANTE"},{q:"Con la D. Rio que atraviesa varios países de Europa central.",ans:"DANUBIO"},{q:"Con la D. Deporte de combate japonés con espadas de bambú.",ans:"KENDO"}],
+  E:[{q:"Con la E. Estrella alrededor de la cual orbita la Tierra.",ans:"SOL"},{q:"Con la E. Continente donde está Alemania.",ans:"EUROPA"},{q:"Con la E. País sudamericano atravesado por la línea del ecuador.",ans:"ECUADOR"},{q:"Con la E. Animal marino con forma de estrella.",ans:"ESTRELLA DE MAR"},{q:"Con la E. País donde está la Torre Eiffel.",ans:"FRANCIA"},{q:"Con la E. Instrumento de cuerda eléctrico muy popular en el rock.",ans:"GUITARRA ELECTRICA"},{q:"Con la E. Continente en el Polo Sur.",ans:"ANTARTIDA"}],
+  F:[{q:"Con la F. Deporte que se juega con once jugadores por lado.",ans:"FUTBOL"},{q:"Con la F. Instrumento de viento de madera que se sopla de lado.",ans:"FLAUTA"},{q:"Con la F. Proceso por el que las plantas producen energía.",ans:"FOTOSINTESIS"},{q:"Con la F. Capital de Alemania.",ans:"BERLIN"},{q:"Con la F. Animal terrestre más veloz del mundo.",ans:"GUEPARDO"},{q:"Con la F. País de Europa occidental cuya capital es París.",ans:"FRANCIA"},{q:"Con la F. Fruta tropical que crece en racimos amarillos.",ans:"BANANA",alt:["PLATANO"]}],
+  G:[{q:"Con la G. Instrumento de cuerda con seis cuerdas.",ans:"GUITARRA"},{q:"Con la G. País donde está la Acrópolis.",ans:"GRECIA"},{q:"Con la G. Animal de sabana con manchas amarillas y negras.",ans:"JAGUAR",alt:["GUEPARDO"]},{q:"Con la G. Mamífero de los Andes parecido a la llama.",ans:"GUANACO"},{q:"Con la G. País africano cuya capital es Accra.",ans:"GHANA"},{q:"Con la G. Ave más grande del mundo que no vuela.",ans:"AVESTRUZ"},{q:"Con la G. País donde nació Albert Einstein.",ans:"ALEMANIA"}],
+  H:[{q:"Con la H. Metal abundante en la sangre y en el acero.",ans:"HIERRO"},{q:"Con la H. Capital de Cuba.",ans:"LA HABANA",alt:["HABANA"]},{q:"Con la H. Deporte que se juega sobre hielo con bastón.",ans:"HOCKEY"},{q:"Con la H. Flor amarilla que siempre mira al sol.",ans:"GIRASOL"},{q:"Con la H. País donde está Hollywood.",ans:"ESTADOS UNIDOS",alt:["EEUU","USA"]},{q:"Con la H. Continente donde está Japón.",ans:"ASIA"},{q:"Con la H. Ave nocturna con grandes ojos.",ans:"LECHUZA",alt:["BUHO"]}],
+  I:[{q:"Con la I. País conocido como 'la bota'.",ans:"ITALIA"},{q:"Con la I. País donde se inventó el yoga.",ans:"INDIA"},{q:"Con la I. País cuya capital es Reikiavik.",ans:"ISLANDIA"},{q:"Con la I. País con bandera verde, blanco y naranja.",ans:"IRLANDA",alt:["IRAN"]},{q:"Con la I. Idioma hablado en Brasil.",ans:"PORTUGUES"},{q:"Con la I. Continente más pequeño del mundo.",ans:"OCEANIA"},{q:"Con la I. Instrumento de cuerda parecido al violín pero más grande.",ans:"VIOLA"}],
+  J:[{q:"Con la J. Planeta más grande del sistema solar.",ans:"JUPITER"},{q:"Con la J. País asiático donde se habla japonés.",ans:"JAPON"},{q:"Con la J. Ciudad santa de tres religiones.",ans:"JERUSALEN"},{q:"Con la J. Animal de sabana con manchas oscuras.",ans:"JAGUAR"},{q:"Con la J. Deporte de combate japonés.",ans:"JUDO"},{q:"Con la J. Capital de Australia.",ans:"CANBERRA"},{q:"Con la J. País de América Central con capital en Tegucigalpa.",ans:"HONDURAS"}],
+  K:[{q:"Con la K. Animal parecido a un oso que vive en Australia.",ans:"KOALA"},{q:"Con la K. Fruta verde de origen neozelandés.",ans:"KIWI"},{q:"Con la K. País africano cuya capital es Nairobi.",ans:"KENIA"},{q:"Con la K. Arte marcial coreano olímpico.",ans:"TAEKWONDO"},{q:"Con la K. País de Asia dividido en norte y sur.",ans:"COREA",alt:["KOREA"]},{q:"Con la K. Marsupial australiano que lleva cría en bolsa.",ans:"CANGURO",alt:["KOALA"]},{q:"Con la K. Instrumento musical de percusión de origen africano.",ans:"DJEMBE"}],
+  L:[{q:"Con la L. Satélite natural de la Tierra.",ans:"LUNA"},{q:"Con la L. Capital del Perú.",ans:"LIMA"},{q:"Con la L. Animal felino de melena.",ans:"LEON"},{q:"Con la L. Fruta cítrica amarilla muy ácida.",ans:"LIMON"},{q:"Con la L. Ciudad italiana famosa por sus canales.",ans:"VENECIA"},{q:"Con la L. País europeo donde se habla portugués.",ans:"PORTUGAL"},{q:"Con la L. Instrumento de cuerda medieval parecido a la guitarra.",ans:"LAUD"}],
+  M:[{q:"Con la M. Fruto rojo que crece en los manzanos.",ans:"MANZANA"},{q:"Con la M. Capital de España.",ans:"MADRID"},{q:"Con la M. Animal marino con tentáculos translúcidos.",ans:"MEDUSA"},{q:"Con la M. País donde está el Machu Picchu.",ans:"PERU"},{q:"Con la M. País donde está la pirámide de Giza.",ans:"EGIPTO"},{q:"Con la M. Instrumento musical de teclado de cola.",ans:"PIANO"},{q:"Con la M. País de Norteamérica cuya capital es Ciudad de México.",ans:"MEXICO"}],
+  N:[{q:"Con la N. Río más largo de África.",ans:"NILO"},{q:"Con la N. País donde está el fiordo más famoso.",ans:"NORUEGA"},{q:"Con la N. País de Centroamérica con capital Managua.",ans:"NICARAGUA"},{q:"Con la N. Elemento químico gaseoso con símbolo Ne.",ans:"NEON"},{q:"Con la N. Capital de Japón.",ans:"TOKIO"},{q:"Con la N. Deporte acuático en piscina.",ans:"NATACION"},{q:"Con la N. País nórdico cuya capital es Helsinki.",ans:"FINLANDIA"}],
+  O:[{q:"Con la O. Uno de los cinco océanos del planeta.",ans:"OCEANO PACIFICO",alt:["PACIFICO","OCEANO"]},{q:"Con la O. Capital de Noruega.",ans:"OSLO"},{q:"Con la O. Color mezcla de rojo y amarillo.",ans:"NARANJA"},{q:"Con la O. Animal marino con ocho tentáculos.",ans:"PULPO"},{q:"Con la O. País donde se crearon los juegos olímpicos.",ans:"GRECIA"},{q:"Con la O. Instrumento musical de metal con muchos tubos en una iglesia.",ans:"ORGANO"},{q:"Con la O. Continente que también es país.",ans:"AUSTRALIA"}],
+  P:[{q:"Con la P. Ave que no puede volar y vive en el polo sur.",ans:"PINGUINO"},{q:"Con la P. Capital de Francia.",ans:"PARIS"},{q:"Con la P. Animal símbolo de China con manchas blancas y negras.",ans:"PANDA"},{q:"Con la P. País de Sudamérica cuya capital es Asunción.",ans:"PARAGUAY"},{q:"Con la P. País cuya capital es Varsovia.",ans:"POLONIA"},{q:"Con la P. Deporte de raqueta en mesa.",ans:"PING PONG",alt:["TENIS DE MESA"]},{q:"Con la P. Segundo planeta del sistema solar.",ans:"VENUS"}],
+  Q:[{q:"Con la Q. Sustancia que da sabor amargo al agua tónica.",ans:"QUININA"},{q:"Con la Q. Cereal originario de los Andes.",ans:"QUINOA"},{q:"Con la Q. Capital del Ecuador.",ans:"QUITO"},{q:"Con la Q. Personaje de novela que lucha contra molinos de viento.",ans:"QUIJOTE"},{q:"Con la Q. Tipo de alimento lácteo sólido.",ans:"QUESO"},{q:"Con la Q. País sudamericano cuya capital es Quito.",ans:"ECUADOR"},{q:"Con la Q. Proceso de calentar algo hasta que arde.",ans:"QUEMAR"}],
+  R:[{q:"Con la R. Color del tomate maduro.",ans:"ROJO"},{q:"Con la R. Capital de Italia.",ans:"ROMA"},{q:"Con la R. Animal roedor conocido por su cola larga.",ans:"RATA"},{q:"Con la R. Deporte que se juega con una pelota ovalada.",ans:"RUGBY"},{q:"Con la R. País europeo cuya capital es Bucarest.",ans:"RUMANIA"},{q:"Con la R. Instrumento de percusión con parche que se golpea.",ans:"REDOBLANTE",alt:["TAMBOR"]},{q:"Con la R. País donde nació el flamenco.",ans:"ESPANA"}],
+  S:[{q:"Con la S. Astro rey del sistema solar.",ans:"SOL"},{q:"Con la S. País donde está la ciudad de Ginebra.",ans:"SUIZA"},{q:"Con la S. Capital de Chile.",ans:"SANTIAGO"},{q:"Con la S. Animal marino con aleta dorsal.",ans:"TIBURON"},{q:"Con la S. País nórdico cuya capital es Estocolmo.",ans:"SUECIA"},{q:"Con la S. Deporte con raqueta y pelota amarilla en cancha verde.",ans:"TENIS"},{q:"Con la S. Continente más pequeño y más seco.",ans:"AUSTRALIA"}],
+  T:[{q:"Con la T. Capital de Japón.",ans:"TOKIO",alt:["TOKYO"]},{q:"Con la T. Continente cubierto de hielo en el polo sur.",ans:"ANTARTIDA"},{q:"Con la T. País asiático donde se habla tailandés.",ans:"TAILANDIA"},{q:"Con la T. Río que cruza Londres.",ans:"TAMESIS"},{q:"Con la T. País de Asia cuya capital es Ankara.",ans:"TURQUIA"},{q:"Con la T. Instrumento musical de percusión de parche.",ans:"TIMBAL",alt:["TAMBOR"]},{q:"Con la T. País de América del Sur cuya capital es Montevideo.",ans:"URUGUAY"}],
+  U:[{q:"Con la U. País de la U que tiene la ciudad de Montevideo.",ans:"URUGUAY"},{q:"Con la U. Planeta del sistema solar con anillos inclinados.",ans:"URANO"},{q:"Con la U. País europeo cuya capital es Kyiv.",ans:"UCRANIA"},{q:"Con la U. Instrumento musical de cuatro cuerdas hawaiano.",ans:"UKELELE"},{q:"Con la U. Ave nocturna símbolo de la sabiduría.",ans:"LECHUZA",alt:["BUHO"]},{q:"Con la U. País cuyos jugadores visten de naranja en el fútbol.",ans:"HOLANDA",alt:["PAISES BAJOS"]},{q:"Con la U. Organización internacional con sede en Nueva York.",ans:"ONU",alt:["NACIONES UNIDAS"]}],
+  V:[{q:"Con la V. Ciudad italiana famosa por sus canales.",ans:"VENECIA"},{q:"Con la V. Segundo planeta del sistema solar.",ans:"VENUS"},{q:"Con la V. Capital de Austria.",ans:"VIENA"},{q:"Con la V. País de Sudamérica con capital en Caracas.",ans:"VENEZUELA"},{q:"Con la V. Deporte de playa con red y pelota.",ans:"VOLEIBOL"},{q:"Con la V. Instrumento de cuerda que se toca con arco, agudo.",ans:"VIOLIN"},{q:"Con la V. País de Centroamérica con volcanes activos.",ans:"COSTA RICA"}],
+  X:[{q:"Con la X. Instrumento musical de láminas que se golpean.",ans:"XILOFONO"},{q:"Con la X. Tipo de rayos utilizados en medicina para ver los huesos.",ans:"RAYOS X"},{q:"Con la X. Ciudad capital de México.",ans:"CIUDAD DE MEXICO",alt:["MEXICO"]},{q:"Con la X. Número diez en numeración romana.",ans:"DIEZ",alt:["X"]},{q:"Con la X. Fruta tropical de cáscara verde y pulpa roja con semillas negras.",ans:"SANDIA"},{q:"Con la X. Personaje de los X-Men que puede controlar el metal.",ans:"MAGNETO"},{q:"Con la X. País cuya capital es Ciudad de México.",ans:"MEXICO"}],
+};
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function buildQuestions() {
+  const q = {};
+  LETTERS.forEach(l => { q[l] = pickRandom(QUESTION_BANK[l]); });
+  return q;
+}
+function normalize(s) {
+  return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function randCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let c = '';
+  for(let i=0;i<4;i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+let myId = null;
+let myRole = null; // 'host' | 'guest'
+let roomCode = null;
+let roomRef = null;
+let gameListener = null;
+let timerInterval = null;
+let localTimer = 0;
+let questions = {};
+let lastGameState = null;
+let myIndex = 0; // 0 o 1
+
+// ---- UI helpers ----
+function setLobbyMsg(msg) { document.getElementById('lobby-msg').textContent = msg; }
+
+window.showJoin = function() {
+  const ja = document.getElementById('join-area');
+  ja.style.display = ja.style.display === 'none' ? 'block' : 'none';
+};
+
+window.selectTime = function(t) {
+  ['t60','t90','t120'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.className = (id === 't'+t) ? 'primary' : '';
+  });
+  if(roomRef && myRole === 'host') {
+    update(roomRef, { timerMax: t });
+  }
+};
+
+// ---- Firebase connect ----
+window.addEventListener('load', () => {
+  myId = 'player_' + Math.random().toString(36).slice(2,10);
+  const connRef = ref(db, '.info/connected');
+  onValue(connRef, snap => {
+    const online = snap.val();
+    const badge = document.getElementById('conn-status');
+    if(badge) {
+      badge.className = 'conn-badge ' + (online ? 'online' : 'offline');
+      badge.innerHTML = `<div class="conn-dot"></div> ${online ? 'Conectado' : 'Sin conexión'}`;
+    }
+    const bc = document.getElementById('btn-create');
+    const bj = document.getElementById('btn-join-show');
+    if(bc) bc.disabled = !online;
+    if(bj) bj.disabled = !online;
+  });
+});
+
+window.createRoom = function() {
+  const name = document.getElementById('my-name').value.trim() || 'Jugador 1';
+  myRole = 'host';
+  myIndex = 0;
+  roomCode = randCode();
+  questions = buildQuestions();
+
+  const initialLetterStates = {};
+  LETTERS.forEach(l => { initialLetterStates[l] = 'pending'; });
+
+  const gameData = {
+    host: { id: myId, name, score: 0, correct: 0, wrong: 0, passed: 0, letters: {} },
+    guest: null,
+    status: 'waiting',
+    currentTurn: 0,
+    timerMax: 60,
+    timer: 60,
+    letterStates: initialLetterStates,
+    activeIdx: null,
+    started: false,
+    questions: questions,
+    lastAction: null,
+  };
+
+  roomRef = ref(db, 'rooms/' + roomCode);
+  set(roomRef, gameData).then(() => {
+    document.getElementById('lobby-screen').style.display = 'none';
+    document.getElementById('waiting-screen').style.display = 'block';
+    document.getElementById('display-room-code').textContent = roomCode;
+    listenRoom();
+  }).catch(e => setLobbyMsg('Error al crear sala: ' + e.message));
+};
+
+window.joinRoom = function() {
+  const name = document.getElementById('my-name').value.trim() || 'Jugador 2';
+  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+  if(code.length !== 4) { setLobbyMsg('El código debe tener 4 letras'); return; }
+  myRole = 'guest';
+  myIndex = 1;
+  roomCode = code;
+  roomRef = ref(db, 'rooms/' + roomCode);
+
+  get(roomRef).then(snap => {
+    if(!snap.exists()) { setLobbyMsg('Sala no encontrada'); return; }
+    const data = snap.val();
+    if(data.status !== 'waiting') { setLobbyMsg('La sala ya está en juego o no existe'); return; }
+    if(data.guest) { setLobbyMsg('La sala ya está llena'); return; }
+
+    questions = data.questions;
+    update(roomRef, {
+      guest: { id: myId, name, score: 0, correct: 0, wrong: 0, passed: 0, letters: {} },
+      status: 'playing',
+    }).then(() => {
+      document.getElementById('lobby-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+      listenRoom();
+    });
+  }).catch(e => setLobbyMsg('Error: ' + e.message));
+};
+
+window.cancelRoom = function() {
+  if(roomRef) remove(roomRef);
+  location.reload();
+};
+
+function listenRoom() {
+  if(gameListener) off(roomRef, 'value', gameListener);
+  gameListener = onValue(roomRef, snap => {
+    if(!snap.exists()) { location.reload(); return; }
+    const data = snap.val();
+    lastGameState = data;
+
+    if(data.status === 'playing' && myRole === 'host') {
+      document.getElementById('waiting-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+    }
+    if(data.status === 'finished') {
+      showResults(data);
+      return;
+    }
+    if(data.status === 'playing') {
+      renderGame(data);
+    }
+  });
+}
+
+function renderGame(data) {
+  if(!data.host || !data.guest) return;
+  const players = [data.host, data.guest];
+
+  // Names & scores
+  [0,1].forEach(i => {
+    document.getElementById('name-'+i).textContent = players[i].name;
+    document.getElementById('score-'+i).textContent = players[i].score;
+    document.getElementById('meta-'+i).textContent = players[i].correct + ' ✓ · ' + players[i].passed + ' →';
+    document.getElementById('card-'+i).className = 'player-card' + (i===data.currentTurn?' active':'') + (i===myIndex?' me-card':'');
+  });
+  document.getElementById('tab-p0').textContent = players[0].name;
+  document.getElementById('tab-p1').textContent = players[1].name;
+
+  const isMyTurn = data.currentTurn === myIndex;
+  document.getElementById('turn-label').textContent = isMyTurn ? '¡Tu turno!' : 'Turno de ' + players[data.currentTurn].name;
+
+  const specBar = document.getElementById('spectator-bar');
+  specBar.style.display = isMyTurn ? 'none' : 'block';
+  document.getElementById('spectator-name').textContent = players[data.currentTurn].name;
+
+  // Rosco
+  if(!document.getElementById('circle-A')) drawRosco();
+  LETTERS.forEach(l => updateLetterVisual(l, data));
+
+  // Active letter
+  const activeIdx = data.activeIdx;
+  const activeLetter = activeIdx !== null ? LETTERS[activeIdx] : null;
+  document.getElementById('cur-letter').textContent = activeLetter || '?';
+
+  if(activeLetter && data.questions && data.questions[activeLetter]) {
+    const q = data.questions[activeLetter];
+    document.getElementById('q-text').textContent = q.q;
+    document.getElementById('q-hint').textContent = 'Respuesta empieza con ' + activeLetter;
+  } else {
+    document.getElementById('q-text').textContent = isMyTurn ? 'Haz clic en una letra para empezar' : 'Esperando al otro jugador...';
+    document.getElementById('q-hint').textContent = '';
+  }
+
+  // Timer sync
+  if(data.timerServerTs && data.started) {
+    const elapsed = Math.floor((Date.now() - data.timerServerTs) / 1000);
+    const remaining = Math.max(0, data.timerMax - elapsed);
+    localTimer = remaining;
+    document.getElementById('timer').textContent = remaining;
+    const tel = document.getElementById('timer');
+    tel.className = remaining <= 10 ? 'timer-display timer-warning' : 'timer-display';
+  } else {
+    document.getElementById('timer').textContent = data.timerMax || 60;
+    document.getElementById('timer').className = 'timer-display';
+  }
+
+  // Controls
+  const inp = document.getElementById('answer-input');
+  const btnConfirm = document.getElementById('btn-confirm');
+  const btnPass = document.getElementById('btn-pass');
+  const btnWrong = document.getElementById('btn-wrong');
+  const btnEnd = document.getElementById('btn-endturn');
+
+  const canPlay = isMyTurn && activeLetter !== null;
+  inp.disabled = !canPlay;
+  btnConfirm.disabled = !canPlay;
+  btnPass.disabled = !canPlay;
+  btnWrong.disabled = !canPlay;
+  btnEnd.disabled = !isMyTurn;
+
+  // Feedback
+  if(data.lastAction) {
+    const banner = document.getElementById('feedback-banner');
+    const ft = document.getElementById('feedback-text');
+    if(data.lastAction.type === 'correct') {
+      banner.className = 'feedback-banner correct';
+      ft.textContent = '✓ Correcto! La respuesta era: ' + data.lastAction.answer;
+    } else if(data.lastAction.type === 'wrong') {
+      banner.className = 'feedback-banner wrong';
+      ft.textContent = '✗ Incorrecto. La respuesta era: ' + data.lastAction.answer;
+    } else if(data.lastAction.type === 'passed') {
+      banner.className = 'feedback-banner passed';
+      ft.textContent = '→ Pasapalabra';
+    } else {
+      banner.className = 'feedback-banner';
+    }
+  }
+}
+
+function drawRosco() {
+  const svg = document.getElementById('rosco-svg');
+  if(!svg) return;
+  const cx=160, cy=160, r=138, n=LETTERS.length;
+  svg.innerHTML='';
+  LETTERS.forEach((letter, i) => {
+    const angle=(i/n)*2*Math.PI - Math.PI/2;
+    const x=cx+r*Math.cos(angle), y=cy+r*Math.sin(angle);
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.style.cursor='pointer';
+    g.addEventListener('click',()=>selectLetter(letter));
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',x); circle.setAttribute('cy',y); circle.setAttribute('r',17);
+    circle.setAttribute('id','circle-'+letter);
+    circle.setAttribute('fill','#f5f4f0'); circle.setAttribute('stroke','#ccc'); circle.setAttribute('stroke-width',1.5);
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x',x); text.setAttribute('y',y+5);
+    text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','12'); text.setAttribute('font-weight','500');
+    text.setAttribute('fill','#1a1a1a'); text.setAttribute('id','text-'+letter);
+    text.textContent=letter;
+    g.appendChild(circle); g.appendChild(text); svg.appendChild(g);
+  });
+}
+
+function getLetterFill(s) {
+  if(s==='correct') return '#22c55e';
+  if(s==='wrong') return '#ef4444';
+  if(s==='passed') return '#f59e0b';
+  if(s==='active') return '#3b82f6';
+  return '#f5f4f0';
+}
+function getLetterStroke(s) {
+  if(s==='correct') return '#16a34a';
+  if(s==='wrong') return '#dc2626';
+  if(s==='passed') return '#d97706';
+  if(s==='active') return '#2563eb';
+  return '#ccc';
+}
+
+function updateLetterVisual(letter, data) {
+  const isActive = data.activeIdx !== null && LETTERS[data.activeIdx] === letter;
+  const s = isActive ? 'active' : (data.letterStates[letter] || 'pending');
+  const c=document.getElementById('circle-'+letter);
+  const t=document.getElementById('text-'+letter);
+  if(c){ c.setAttribute('fill',getLetterFill(s)); c.setAttribute('stroke',getLetterStroke(s)); }
+  if(t){ t.setAttribute('fill',(s==='active'||s==='correct'||s==='wrong'||s==='passed')?'#fff':'#1a1a1a'); }
+}
+
+// ---- Game actions (only allowed on my turn) ----
+function isMyTurnNow() {
+  return lastGameState && lastGameState.currentTurn === myIndex;
+}
+function myKey() { return myRole === 'host' ? 'host' : 'guest'; }
+function myPlayerData() { return lastGameState ? lastGameState[myKey()] : null; }
+
+window.selectLetter = function(letter) {
+  if(!isMyTurnNow()) return;
+  const ls = lastGameState.letterStates || {};
+  if(ls[letter]==='correct'||ls[letter]==='wrong') return;
+
+  const updates = {
+    activeIdx: LETTERS.indexOf(letter),
+    lastAction: null,
+  };
+  if(!lastGameState.started) {
+    updates.started = true;
+    updates.timerServerTs = Date.now();
+  }
+  document.getElementById('answer-input').value='';
+  document.getElementById('answer-input').focus();
+  update(roomRef, updates);
+};
+
+window.checkAnswer = function() {
+  if(!isMyTurnNow()) return;
+  const activeIdx = lastGameState.activeIdx;
+  if(activeIdx === null) return;
+  const letter = LETTERS[activeIdx];
+  const inputEl = document.getElementById('answer-input');
+  const input = normalize(inputEl.value);
+  if(!input) return;
+
+  const q = lastGameState.questions[letter];
+  const ansNorm = q ? normalize(q.ans) : '';
+  const alts = q && q.alt ? q.alt.map(normalize) : [];
+  const correct = q && (input === ansNorm || alts.includes(input));
+
+  const pl = myPlayerData();
+  const newScore = (pl.score||0) + (correct?1:0);
+  const newCorrect = (pl.correct||0) + (correct?1:0);
+  const newWrong = (pl.wrong||0) + (correct?0:1);
+  const lettersCopy = {...(pl.letters||{})};
+  lettersCopy[letter] = correct?'correct':'wrong';
+
+  const lsUpdate = {...lastGameState.letterStates};
+  lsUpdate[letter] = correct?'correct':'wrong';
+
+  const updates = {
+    [`${myKey()}/score`]: newScore,
+    [`${myKey()}/correct`]: newCorrect,
+    [`${myKey()}/wrong`]: newWrong,
+    [`${myKey()}/letters`]: lettersCopy,
+    [`letterStates/${letter}`]: correct?'correct':'wrong',
+    lastAction: { type: correct?'correct':'wrong', answer: q?q.ans:'?' },
+  };
+
+  update(roomRef, updates).then(() => {
+    inputEl.value='';
+    inputEl.disabled=true;
+    setTimeout(() => {
+      advanceLetter();
+    }, 1800);
+  });
+};
+
+window.passLetter = function() {
+  if(!isMyTurnNow()) return;
+  const activeIdx = lastGameState.activeIdx;
+  if(activeIdx===null) return;
+  const letter = LETTERS[activeIdx];
+  if((lastGameState.letterStates[letter]||'pending')==='pending') {
+    const pl = myPlayerData();
+    const lsUpdate = {...lastGameState.letterStates};
+    lsUpdate[letter] = 'passed';
+    update(roomRef, {
+      [`${myKey()}/passed`]: (pl.passed||0)+1,
+      [`letterStates/${letter}`]: 'passed',
+      lastAction: { type:'passed', answer:'' },
+    }).then(() => setTimeout(advanceLetter, 800));
+  }
+};
+
+window.wrongAnswer = function() {
+  if(!isMyTurnNow()) return;
+  const activeIdx = lastGameState.activeIdx;
+  if(activeIdx===null) return;
+  const letter = LETTERS[activeIdx];
+  const q = lastGameState.questions[letter];
+  const pl = myPlayerData();
+  const lettersCopy = {...(pl.letters||{})};
+  lettersCopy[letter] = 'wrong';
+  update(roomRef, {
+    [`${myKey()}/wrong`]: (pl.wrong||0)+1,
+    [`${myKey()}/letters`]: lettersCopy,
+    [`letterStates/${letter}`]: 'wrong',
+    lastAction: { type:'wrong', answer: q?q.ans:'?' },
+  }).then(() => { document.getElementById('answer-input').disabled=true; setTimeout(advanceLetter, 1800); });
+};
+
+function advanceLetter() {
+  if(!lastGameState) return;
+  const currentIdx = lastGameState.activeIdx;
+  if(currentIdx===null) return;
+  const ls = lastGameState.letterStates||{};
+  let next = (currentIdx+1) % LETTERS.length;
+  let tries = 0;
+  while(tries < LETTERS.length) {
+    const s = ls[LETTERS[next]];
+    if(s!=='correct' && s!=='wrong') break;
+    next=(next+1)%LETTERS.length;
+    tries++;
+  }
+  if(tries===LETTERS.length) { endGameDB(); return; }
+
+  // select next
+  const letter = LETTERS[next];
+  const q = lastGameState.questions[letter];
+  document.getElementById('q-text').textContent = q?q.q:'';
+  document.getElementById('q-hint').textContent = 'Respuesta empieza con '+letter;
+  document.getElementById('answer-input').disabled=false;
+  document.getElementById('answer-input').value='';
+  document.getElementById('answer-input').focus();
+  update(roomRef, { activeIdx: next, lastAction: null });
+}
+
+window.endTurn = function() {
+  if(!isMyTurnNow()) return;
+  const ls = {...(lastGameState.letterStates||{})};
+  LETTERS.forEach(l => { if(ls[l]==='passed') ls[l]='pending'; });
+  update(roomRef, {
+    currentTurn: 1-lastGameState.currentTurn,
+    started: false,
+    activeIdx: null,
+    timerServerTs: null,
+    letterStates: ls,
+    lastAction: null,
+  });
+};
+
+function endGameDB() {
+  update(roomRef, { status: 'finished' });
+}
+
+function showResults(data) {
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('result-screen').style.display='block';
+  const p = [data.host, data.guest];
+  let title, sub;
+  if((p[0].score||0)>(p[1].score||0)){title='🏆 '+p[0].name+' gana!';sub='¡Felicitaciones! 🎉';}
+  else if((p[1].score||0)>(p[0].score||0)){title='🏆 '+p[1].name+' gana!';sub='¡Felicitaciones! 🎉';}
+  else{title='¡Empate!';sub='Ambos jugaron increíble 💪';}
+  document.getElementById('winner-title').textContent=title;
+  document.getElementById('winner-sub').textContent=sub;
+  document.getElementById('tab-p0').textContent=p[0].name;
+  document.getElementById('tab-p1').textContent=p[1].name;
+  buildSummaryTab(p);
+  buildPlayerTab(0,p,data.questions);
+  buildPlayerTab(1,p,data.questions);
+  showTab('summary');
+}
+
+function buildSummaryTab(p) {
+  let html='<div style="margin-bottom:1rem;">';
+  p.forEach(pl => {
+    if(!pl) return;
+    html+=`<div class="summary-row"><span style="font-weight:500;">${pl.name}</span><span>${pl.score||0} pts · ${pl.correct||0} ✓ · ${pl.wrong||0} ✗ · ${pl.passed||0} →</span></div>`;
+  });
+  html+='</div>';
+  document.getElementById('tab-content-summary').innerHTML=html;
+}
+
+function buildPlayerTab(idx,p,qs) {
+  const pl=p[idx];
+  if(!pl){document.getElementById('tab-content-p'+idx).innerHTML='';return;}
+  let html='<div class="result-letter-grid">';
+  LETTERS.forEach(l => {
+    const st=(pl.letters&&pl.letters[l])||'pending';
+    const q=qs&&qs[l];
+    const stLabel=st==='correct'?'✓':st==='wrong'?'✗':'—';
+    const rowClass=st==='correct'?'correct-row':st==='wrong'?'wrong-row':'';
+    html+=`<div class="result-letter-row ${rowClass}"><div class="rl-letter">${stLabel} ${l}</div><div class="rl-info"><div style="font-size:12px;color:#555;">${q?q.q.replace(/^Con la [A-Z]\. /,''):''}</div><div class="rl-ans">${q?q.ans:''}</div></div></div>`;
+  });
+  html+='</div>';
+  document.getElementById('tab-content-p'+idx).innerHTML=html;
+}
+
+window.showTab = function(tab) {
+  ['summary','p0','p1'].forEach(t => {
+    document.getElementById('tab-content-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('tab-'+t).className='tab-btn'+(t===tab?' active':'');
+  });
+};
+</script>
+</body>
+</html>
