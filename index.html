@@ -655,6 +655,8 @@ function randCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i
 let myId='u'+Math.random().toString(36).slice(2,9);
 let myRole=null, myIdx=0, roomCode=null, roomRef=null, listener=null;
 let timerInterval=null, lastData=null, busy=false;
+// timerKey tracks which timer session is active — avoids restarting on every Firebase update
+let timerKey=null;
 
 // Connection
 window.addEventListener('load',()=>{
@@ -738,16 +740,25 @@ function listenRoom(){
 }
 
 function syncTimer(data){
-  clearInterval(timerInterval);
   const el=document.getElementById('timer');
-  if(!data.timerRunning||!data.timerStart){ el.textContent=data.timerMax||60; el.className='timer-num'; return; }
+  // If timer not running, show max and clear
+  if(!data.timerRunning||!data.timerStart){
+    clearInterval(timerInterval); timerInterval=null; timerKey=null;
+    el.textContent=data.timerMax||60; el.className='timer-num'; return;
+  }
+  // Only restart interval when timer session changes (new turn or new start)
+  const key=String(data.timerStart)+'_'+String(data.currentTurn);
+  if(timerKey===key) return; // already ticking for this session
+  clearInterval(timerInterval); timerKey=key;
   function tick(){
-    if(!lastData||!lastData.timerRunning){ clearInterval(timerInterval); return; }
+    if(!lastData||!lastData.timerRunning||String(lastData.timerStart)+'_'+String(lastData.currentTurn)!==timerKey){
+      clearInterval(timerInterval); timerKey=null; return;
+    }
     const elapsed=Math.floor((Date.now()-lastData.timerStart)/1000);
     const rem=Math.max(0,(lastData.timerMax||60)-elapsed);
     el.textContent=rem;
     el.className=rem<=10?'timer-num warn':'timer-num';
-    if(rem<=0){ clearInterval(timerInterval); if(isMine()) endTurn(); }
+    if(rem<=0){ clearInterval(timerInterval); timerKey=null; if(isMine()) endTurn(); }
   }
   tick(); timerInterval=setInterval(tick,500);
 }
@@ -798,6 +809,8 @@ function renderGame(data){
 
   syncTimer(data);
 
+  // If Firebase cleared activeIdx (e.g. after answer), reset busy so controls re-enable
+  if(al===null && busy){ busy=false; }
   const canAct=mine&&al!==null&&!busy;
   document.getElementById('ans-input').disabled=!canAct;
   document.getElementById('btn-ok').disabled=!canAct;
@@ -939,16 +952,21 @@ window.wrongAnswer=function(){
 };
 
 function advanceLetter(){
-  if(!lastData) return;
-  const ls=lastData.letterStates||{};
-  const hasMore=LETTERS.some(l=>ls[l]!=='correct'&&ls[l]!=='wrong');
-  if(!hasMore){ endGameDB(); return; }
-  update(roomRef,{activeIdx:null,lastAction:{type:'none',answer:'',player:-1}});
+  // Use freshly updated lastData (Firebase listener has already updated it at this point)
+  // But to be safe, re-fetch from Firebase before deciding to end game
+  get(roomRef).then(snap=>{
+    if(!snap.exists()) return;
+    const fresh=snap.val();
+    const ls=fresh.letterStates||{};
+    const hasMore=LETTERS.some(l=>ls[l]!=='correct'&&ls[l]!=='wrong');
+    if(!hasMore){ endGameDB(); return; }
+    update(roomRef,{activeIdx:null,lastAction:{type:'none',answer:'',player:-1}});
+  });
 }
 
 window.endTurn=function(){
   if(!isMine()) return;
-  clearInterval(timerInterval);
+  clearInterval(timerInterval); timerKey=null; timerInterval=null;
   const ls={...(lastData.letterStates||{})};
   LETTERS.forEach(l=>{ if(ls[l]==='passed') ls[l]='pending'; });
   update(roomRef,{
