@@ -3,546 +3,567 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pasapalabra Online</title>
+<title>Pasapalabra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap');
-
 :root {
-  --bg: #080c14;
-  --surface: #111827;
-  --surface2: #1e2a3a;
-  --border: rgba(255,255,255,0.08);
-  --text: #e2e8f0;
-  --muted: #64748b;
-  --gold: #f59e0b;
-  --gold-dim: rgba(245,158,11,0.15);
-  --blue: #3b82f6;
-  --green: #22c55e;
-  --red: #ef4444;
-  --amber: #f59e0b;
-  --pending: #2d3748;
+  --bg:       #05080f;
+  --panel:    #0c1220;
+  --card:     #111b2e;
+  --border:   rgba(255,255,255,0.07);
+  --text:     #e8eef8;
+  --muted:    #4a5872;
+  --gold:     #f0b429;
+  --gold2:    #ffd97d;
+  --blue:     #4f8ef7;
+  --blue-dim: rgba(79,142,247,0.12);
+  --green:    #2dd67a;
+  --red:      #f0475a;
+  --amber:    #f7941d;
+  --radius:   18px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(245,158,11,0.08), transparent);
+  overflow-x: hidden;
 }
 
-#app { max-width: 540px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+/* ── STARFIELD background ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(79,142,247,0.13) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(240,180,41,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
 
-/* HEADER */
-.header { text-align: center; padding: 1.5rem 0 1rem; }
+#app {
+  position: relative; z-index: 1;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+}
+
+/* ══════════════════════════════
+   HEADER
+══════════════════════════════ */
+.header {
+  text-align: center;
+  padding: 2rem 0 1.25rem;
+}
+.header-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+.header-logo-ring {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 18px rgba(240,180,41,0.35), inset 0 0 10px rgba(240,180,41,0.1);
+  font-size: 20px;
+}
 .header h1 {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 2rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  background: linear-gradient(135deg, #f59e0b, #fcd34d, #f59e0b);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 3rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  background: linear-gradient(160deg, var(--gold2) 0%, var(--gold) 50%, #c87f0a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-transform: uppercase;
 }
-.header .sub {
-  font-size: 13px;
+.header-sub {
+  font-size: 11px;
   color: var(--muted);
-  margin-top: 4px;
-  letter-spacing: 0.05em;
-}
-
-/* SCOREBOARD */
-.scoreboard { display: flex; gap: 12px; margin-bottom: 1.25rem; }
-.player-card {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 16px;
-  text-align: center;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-.player-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  background: linear-gradient(135deg, rgba(59,130,246,0.1), transparent);
-}
-.player-card.active { border-color: var(--blue); box-shadow: 0 0 24px rgba(59,130,246,0.2); }
-.player-card.active::before { opacity: 1; }
-.player-card.me-card { border-color: rgba(245,158,11,0.4); }
-.player-name { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
-.player-score {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.player-card.active .player-score { color: var(--blue); }
-.player-meta { font-size: 11px; color: var(--muted); }
-.me-tag {
-  display: inline-block;
-  background: var(--gold-dim);
-  color: var(--gold);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  padding: 2px 6px;
-  border-radius: 4px;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-top: 4px;
+}
+.header-turn {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  letter-spacing: 0.05em;
+  min-height: 18px;
 }
 
-/* ROSCO */
+/* ══════════════════════════════
+   CONNECTION BADGE
+══════════════════════════════ */
+.conn-wrap { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+.badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  border-radius: 99px; font-size: 11px; font-weight: 600;
+  padding: 5px 14px; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.badge.online  { background: rgba(45,214,122,0.1); color: var(--green); border: 1px solid rgba(45,214,122,0.25); }
+.badge.offline { background: rgba(240,71,90,0.1);  color: var(--red);   border: 1px solid rgba(240,71,90,0.25); }
+.bdot { width: 6px; height: 6px; border-radius: 50%; }
+.badge.online  .bdot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.badge.offline .bdot { background: var(--red); }
+
+/* ══════════════════════════════
+   SCOREBOARD
+══════════════════════════════ */
+.scoreboard { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+.p-card {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px 12px;
+  text-align: center;
+  transition: border-color .3s, box-shadow .3s;
+  position: relative; overflow: hidden;
+}
+.p-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(79,142,247,0.08) 0%, transparent 60%);
+  opacity: 0; transition: opacity .3s;
+}
+.p-card.active { border-color: rgba(79,142,247,0.5); box-shadow: 0 0 0 1px rgba(79,142,247,0.2), 0 8px 32px rgba(79,142,247,0.15); }
+.p-card.active::after { opacity: 1; }
+.p-card.me { border-color: rgba(240,180,41,0.3); }
+.p-you {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--gold);
+  background: rgba(240,180,41,0.1); border-radius: 4px;
+  padding: 2px 6px; display: inline-block; margin-bottom: 6px;
+}
+.p-name { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.p-score {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 46px; line-height: 1; color: var(--text);
+  transition: color .3s;
+}
+.p-card.active .p-score { color: var(--blue); }
+.p-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ══════════════════════════════
+   ROSCO
+══════════════════════════════ */
 .rosco-wrap {
   position: relative;
-  width: 320px;
-  height: 320px;
-  margin: 0 auto 1.25rem;
-  filter: drop-shadow(0 0 40px rgba(59,130,246,0.1));
+  width: 330px; height: 330px;
+  margin: 0 auto 1.5rem;
 }
-.rosco-svg { width: 100%; height: 100%; }
+.rosco-svg { width: 100%; height: 100%; overflow: visible; }
+
 .center-panel {
-  position: absolute;
-  top: 50%; left: 50%;
+  position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 150px;
-  text-align: center;
+  width: 148px; text-align: center;
   pointer-events: none;
 }
 .cur-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  background: var(--surface2);
+  width: 56px; height: 56px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 28px; color: var(--blue);
+  background: var(--card);
   border: 2px solid var(--blue);
-  box-shadow: 0 0 20px rgba(59,130,246,0.4);
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--blue);
-  margin-bottom: 6px;
+  box-shadow: 0 0 0 4px rgba(79,142,247,0.1), 0 0 24px rgba(79,142,247,0.3);
+  margin-bottom: 8px;
+  transition: all .3s;
 }
 .timer-num {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 36px;
-  font-weight: 700;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 44px; line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  transition: color .3s;
 }
-.timer-num.warn { color: var(--red); animation: pulse-warn 0.5s ease-in-out infinite alternate; }
-@keyframes pulse-warn { from { opacity: 1; } to { opacity: 0.6; } }
-.timer-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.timer-num.warn { color: var(--red); animation: throb .4s ease-in-out infinite alternate; }
+@keyframes throb { from { opacity: 1; } to { opacity: 0.5; } }
+.timer-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 
-/* STATUS LEGEND */
+/* ══════════════════════════════
+   LEGEND
+══════════════════════════════ */
 .legend {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  display: flex; gap: 14px; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 1.25rem;
 }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
 .ldot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* SPEC BAR */
+/* ══════════════════════════════
+   SPECTATOR BAR
+══════════════════════════════ */
 .spec-bar {
-  background: rgba(245,158,11,0.08);
-  border: 1px solid rgba(245,158,11,0.2);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--gold);
-  text-align: center;
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.02em;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(247,148,29,0.08);
+  border: 1px solid rgba(247,148,29,0.2);
+  border-radius: 12px; padding: 10px 16px;
+  font-size: 13px; font-weight: 500; color: var(--amber);
+  margin-bottom: 1rem;
 }
 
-/* QUESTION PANEL */
-.q-panel {
-  background: var(--surface);
+/* ══════════════════════════════
+   QUESTION PANEL
+══════════════════════════════ */
+.q-wrap {
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius);
   padding: 1.25rem 1.5rem;
-  margin-bottom: 0.75rem;
-  min-height: 90px;
+  margin-bottom: 0.875rem;
+  min-height: 100px;
   position: relative;
-  transition: border-color 0.3s;
+  transition: border-color .3s;
 }
-.q-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+.q-wrap.has-active { border-color: rgba(79,142,247,0.25); }
+.q-eyebrow {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
 }
-.q-text { font-size: 16px; color: var(--text); line-height: 1.6; font-weight: 400; }
-.q-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.q-eyebrow::before {
+  content: '';
+  width: 16px; height: 2px; border-radius: 1px;
+  background: var(--blue); opacity: 0.6; display: inline-block;
+}
+.q-text { font-size: 16px; line-height: 1.65; color: var(--text); font-weight: 400; }
+.q-hint { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+.q-hint::before { content: '→'; color: var(--blue); font-size: 14px; }
 
-/* FEEDBACK */
+/* ══════════════════════════════
+   FEEDBACK
+══════════════════════════════ */
 .fb {
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 0.75rem;
-  font-size: 13px;
-  display: none;
-  align-items: center;
-  gap: 10px;
-  font-weight: 500;
+  border-radius: 12px; padding: 11px 16px;
+  margin-bottom: 0.875rem; font-size: 13px; font-weight: 600;
+  display: none; align-items: center; gap: 10px;
+  transition: all .2s;
 }
-.fb.correct { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; display: flex; }
-.fb.wrong { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; display: flex; }
-.fb.passed { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); display: flex; }
-.fb-icon { font-size: 18px; flex-shrink: 0; }
+.fb.correct { background: rgba(45,214,122,0.09); border: 1px solid rgba(45,214,122,0.28); color: #5de89a; display: flex; }
+.fb.wrong   { background: rgba(240,71,90,0.09);  border: 1px solid rgba(240,71,90,0.28);  color: #f47585; display: flex; }
+.fb.passed  { background: rgba(247,148,29,0.09); border: 1px solid rgba(247,148,29,0.28); color: var(--amber); display: flex; }
+.fb-icon { font-size: 20px; flex-shrink: 0; }
 
-/* INPUT */
-.ans-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
+/* ══════════════════════════════
+   INPUT + BUTTONS
+══════════════════════════════ */
+.ans-row { display: flex; gap: 8px; margin-bottom: 0.875rem; }
 .ans-row input {
-  flex: 1;
-  height: 48px;
-  padding: 0 16px;
+  flex: 1; height: 50px; padding: 0 18px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--card);
   color: var(--text);
-  font-size: 16px;
-  font-family: 'Inter', sans-serif;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
+  font-size: 16px; font-family: 'Inter', sans-serif;
+  outline: none; transition: border-color .2s, box-shadow .2s;
 }
-.ans-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-.ans-row input:disabled { opacity: 0.4; cursor: not-allowed; }
+.ans-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(79,142,247,0.15); }
+.ans-row input:disabled { opacity: 0.35; cursor: not-allowed; }
 .ans-row input::placeholder { color: var(--muted); }
 
-/* BUTTONS */
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
-
-button {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
-}
-button:hover:not(:disabled) { background: var(--surface2); border-color: rgba(255,255,255,0.15); }
-button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-button.primary {
-  background: var(--blue);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 4px 14px rgba(59,130,246,0.3);
-}
-button.primary:hover:not(:disabled) { background: #2563eb; box-shadow: 0 4px 20px rgba(59,130,246,0.5); }
-button.primary:active:not(:disabled) { transform: scale(0.97); }
-
-button.btn-confirm {
-  height: 48px;
-  padding: 0 20px;
+.btn-confirm {
+  height: 50px; padding: 0 22px;
   border-radius: 12px;
-  font-size: 15px;
+  border: none;
+  background: var(--blue);
+  color: #fff; font-size: 15px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer; letter-spacing: 0.04em;
+  box-shadow: 0 4px 18px rgba(79,142,247,0.35);
+  transition: all .15s;
 }
-button.btn-pass { color: var(--gold); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
-button.btn-pass:hover:not(:disabled) { background: rgba(245,158,11,0.15); }
-button.btn-wrong { color: #f87171; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
-button.btn-wrong:hover:not(:disabled) { background: rgba(239,68,68,0.15); }
-button.btn-end { color: var(--muted); }
+.btn-confirm:hover:not(:disabled) { background: #3a7de0; box-shadow: 0 6px 24px rgba(79,142,247,0.5); transform: translateY(-1px); }
+.btn-confirm:active:not(:disabled) { transform: translateY(0); }
+.btn-confirm:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* BADGE */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 12px;
-  margin-bottom: 1rem;
-  letter-spacing: 0.05em;
+.action-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 1.25rem; }
+.action-btn {
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif;
+  cursor: pointer; transition: all .15s; letter-spacing: 0.03em;
+  border: 1px solid transparent;
 }
-.badge.online { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
-.badge.offline { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
-.bdot { width: 6px; height: 6px; border-radius: 50%; }
-.badge.online .bdot { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
-.badge.offline .bdot { background: #ef4444; }
+.action-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.btn-pass  { background: rgba(247,148,29,0.1); color: var(--amber); border-color: rgba(247,148,29,0.25); }
+.btn-pass:hover:not(:disabled)  { background: rgba(247,148,29,0.18); }
+.btn-wrong { background: rgba(240,71,90,0.1);  color: var(--red);   border-color: rgba(240,71,90,0.25); }
+.btn-wrong:hover:not(:disabled) { background: rgba(240,71,90,0.18); }
+.btn-end   { background: rgba(255,255,255,0.04); color: var(--muted); border-color: var(--border); }
+.btn-end:hover:not(:disabled)   { background: rgba(255,255,255,0.08); color: var(--text); }
 
-/* MODAL / OVERLAY */
+/* ══════════════════════════════
+   MODAL / OVERLAY
+══════════════════════════════ */
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1rem;
+  background: rgba(0,5,15,0.82);
+  backdrop-filter: blur(10px) saturate(0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 1rem;
 }
-.box {
-  background: var(--surface);
-  border: 1px solid var(--border);
+.modal {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.09);
   border-radius: 24px;
-  padding: 2rem;
+  padding: 2.25rem 2rem;
   text-align: center;
-  max-width: 420px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+  max-width: 420px; width: 100%;
+  max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.6);
 }
-.box h2 {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 6px;
+.modal-icon { font-size: 48px; margin-bottom: 10px; display: block; line-height: 1; }
+.modal h2 {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2.2rem; letter-spacing: 0.1em;
+  color: var(--text); margin-bottom: 6px;
 }
-.box p { color: var(--muted); font-size: 14px; margin-bottom: 1.5rem; }
+.modal-sub { color: var(--muted); font-size: 14px; margin-bottom: 1.75rem; line-height: 1.5; }
 
-.box input {
-  width: 100%;
-  height: 48px;
-  padding: 0 16px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 15px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  transition: border-color 0.2s;
+.modal input {
+  width: 100%; height: 50px; padding: 0 18px; margin-bottom: 12px;
+  border-radius: 12px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text);
+  font-size: 15px; font-family: 'Inter', sans-serif;
+  outline: none; transition: border-color .2s;
 }
-.box input:focus { border-color: var(--blue); }
-.box input::placeholder { color: var(--muted); }
+.modal input:focus { border-color: var(--blue); }
+.modal input::placeholder { color: var(--muted); }
+
+.btn-primary {
+  width: 100%; padding: 14px;
+  border-radius: 14px; border: none;
+  background: var(--blue); color: #fff;
+  font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif;
+  cursor: pointer; letter-spacing: 0.04em;
+  box-shadow: 0 6px 24px rgba(79,142,247,0.35);
+  transition: all .15s;
+}
+.btn-primary:hover:not(:disabled) { background: #3a7de0; box-shadow: 0 8px 30px rgba(79,142,247,0.5); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  width: 100%; padding: 12px; margin-top: 8px;
+  border-radius: 12px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif;
+  cursor: pointer; transition: all .15s;
+}
+.btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: var(--text); }
+.btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.btn-danger {
+  width: 100%; padding: 12px; margin-top: 8px;
+  border-radius: 12px; border: 1px solid rgba(240,71,90,0.25);
+  background: rgba(240,71,90,0.06); color: var(--red);
+  font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif;
+  cursor: pointer; transition: all .15s;
+}
+.btn-danger:hover { background: rgba(240,71,90,0.12); }
+
+.input-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+  display: block; text-align: left; margin-bottom: 7px;
+}
 
 .divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 1rem 0;
-  color: var(--muted);
-  font-size: 12px;
+  display: flex; align-items: center; gap: 12px;
+  margin: 1.25rem 0; color: var(--muted); font-size: 11px; letter-spacing: 0.08em;
 }
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-.room-code {
+/* Room code */
+.room-code-box {
   background: var(--bg);
-  border: 1px solid rgba(245,158,11,0.3);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border: 1px solid rgba(240,180,41,0.3);
+  border-radius: 16px; padding: 1.5rem 1rem;
   margin: 1rem 0;
-  letter-spacing: 8px;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 36px;
-  font-weight: 700;
+  box-shadow: 0 0 40px rgba(240,180,41,0.07), inset 0 0 20px rgba(240,180,41,0.04);
+}
+.room-code-label { font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.room-code-value {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 52px; letter-spacing: 14px;
   color: var(--gold);
-  text-shadow: 0 0 30px rgba(245,158,11,0.4);
+  text-shadow: 0 0 30px rgba(240,180,41,0.5), 0 0 60px rgba(240,180,41,0.2);
+  line-height: 1;
 }
 
-.waiting-dots::after { content: ''; animation: dots 1.5s infinite; }
+/* Time picker */
+.time-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.time-btn {
+  flex: 1; padding: 11px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--muted);
+  font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif;
+  cursor: pointer; transition: all .15s; letter-spacing: 0.03em;
+}
+.time-btn.sel { border-color: var(--gold); color: var(--gold); background: rgba(240,180,41,0.08); box-shadow: 0 0 12px rgba(240,180,41,0.1); }
+.time-btn:not(.sel):hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+
+/* Waiting dots */
+.waiting-dots::after { content: ''; animation: dots 1.5s steps(1) infinite; }
 @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''} }
 
-/* TIME PICKER */
-.time-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 1rem; }
-.time-btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.time-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(245,158,11,0.1); }
-.time-btn:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+/* ══════════════════════════════
+   RESULTS
+══════════════════════════════ */
+.winner-trophy { font-size: 64px; display: block; margin-bottom: 4px; animation: float 2s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
-/* RESULTS TABS */
-.tab-row { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
-.tab-btn { flex: 1; padding: 10px; font-size: 13px; background: transparent; border: none; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: 'Inter', sans-serif; transition: color 0.15s; }
+.winner-name {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2.5rem; letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--gold2), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tab-row { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.tab-btn {
+  flex: 1; padding: 11px 8px;
+  font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif;
+  background: transparent; border: none; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .15s; letter-spacing: 0.03em;
+}
 .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
 
-.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px,1fr)); gap: 8px; text-align: left; margin: 1rem 0; }
-.res-row {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  transition: border-color 0.2s;
+.sum-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
 }
-.res-row.cr { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
-.res-row.wr { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
-.res-row .rl { font-size: 15px; font-weight: 700; flex-shrink: 0; width: 22px; font-family: 'Playfair Display', serif; }
-.res-row.cr .rl { color: #4ade80; }
-.res-row.wr .rl { color: #f87171; }
-.res-row .ri { flex: 1; min-width: 0; }
-.res-row .rq { font-size: 10px; color: var(--muted); margin-bottom: 2px; line-height: 1.3; }
-.res-row .ra { font-size: 12px; font-weight: 600; color: var(--text); }
-
-.sum-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .sum-row:last-child { border-bottom: none; }
-.sum-name { font-weight: 600; color: var(--text); }
-.sum-score { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold); font-weight: 700; }
-
-/* WINNER */
-.winner-badge {
-  font-size: 56px;
-  margin-bottom: 8px;
-  display: block;
-}
-.winner-name {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 28px;
-  font-weight: 900;
-  background: linear-gradient(135deg, #f59e0b, #fcd34d);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 4px;
+.sum-pname { font-size: 15px; font-weight: 600; color: var(--text); }
+.sum-detail { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.sum-pts {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 28px; color: var(--gold); letter-spacing: 0.05em;
 }
 
-/* CONFETTI */
+.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 8px; margin: 1rem 0; text-align: left; }
+.res-row {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 11px; padding: 10px 12px;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.res-row.cr { border-color: rgba(45,214,122,0.3); background: rgba(45,214,122,0.04); }
+.res-row.wr { border-color: rgba(240,71,90,0.3);  background: rgba(240,71,90,0.04); }
+.res-letter { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 18px; flex-shrink: 0; width: 24px; line-height: 1.2; }
+.res-row.cr .res-letter { color: var(--green); }
+.res-row.wr .res-letter { color: var(--red); }
+.res-row:not(.cr):not(.wr) .res-letter { color: var(--muted); }
+.res-q { font-size: 11px; color: var(--muted); line-height: 1.35; margin-bottom: 3px; }
+.res-ans { font-size: 12px; font-weight: 700; color: var(--text); }
+
+/* ══════════════════════════════
+   CONFETTI
+══════════════════════════════ */
 .confetti-piece {
-  position: fixed;
-  width: 10px; height: 10px;
-  top: -10px;
-  border-radius: 2px;
-  animation: confetti-fall linear forwards;
-  pointer-events: none;
-  z-index: 200;
+  position: fixed; top: -12px; z-index: 999;
+  border-radius: 2px; pointer-events: none;
+  animation: cfall linear forwards;
 }
-@keyframes confetti-fall {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-}
-
-/* LOBBY BUTTONS */
-.lobby-btns { display: flex; gap: 10px; margin-bottom: 0.5rem; }
-.lobby-btns button { flex: 1; padding: 14px; font-size: 14px; border-radius: 12px; }
-
-#join-area { margin-top: 12px; }
-#join-area input { letter-spacing: 8px; font-size: 22px; text-align: center; font-family: 'Playfair Display', serif; font-weight: 700; }
-
-#lobby-msg { font-size: 13px; color: #f87171; margin-top: 8px; }
-
-/* SECTION LABELS */
-.section-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
-  display: block;
+@keyframes cfall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg) scale(0.5); opacity: 0; }
 }
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- LOBBY -->
+<!-- ═══ LOBBY ═══ -->
 <div id="lobby">
-  <div class="overlay"><div class="box">
-    <div style="font-size:40px;margin-bottom:8px">🎯</div>
+  <div class="overlay"><div class="modal">
+    <span class="modal-icon">🎯</span>
     <h2>Pasapalabra</h2>
-    <p>El rosco para dos — juega online con tu pareja</p>
+    <p class="modal-sub">El rosco de las palabras — juega online con tu pareja 💛</p>
     <div style="display:flex;justify-content:center;margin-bottom:1.5rem">
-      <div id="conn-badge" class="badge offline"><div class="bdot"></div> Conectando...</div>
+      <div id="conn-badge" class="badge offline"><div class="bdot"></div>Conectando...</div>
     </div>
-    <span class="section-label">Tu nombre</span>
+    <label class="input-label">Tu nombre</label>
     <input id="my-name" placeholder="¿Cómo te llamas?" maxlength="20"/>
-    <div class="lobby-btns">
-      <button class="primary" onclick="createRoom()" id="btn-create" disabled>Crear sala</button>
-      <button onclick="showJoin()" id="btn-join-show" disabled>Unirse</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary" onclick="createRoom()" id="btn-create" style="flex:1" disabled>Crear sala</button>
+      <button class="btn-secondary" onclick="showJoin()" id="btn-join-show" style="flex:1;margin:0;width:auto" disabled>Unirse</button>
     </div>
     <div id="join-area" style="display:none">
       <div class="divider">o entra con un código</div>
-      <input id="code-input" placeholder="XXXX" maxlength="4"/>
-      <button class="primary" onclick="joinRoom()" style="width:100%;padding:14px;font-size:14px;border-radius:12px;margin-top:4px">Entrar a la sala</button>
+      <input id="code-input" placeholder="XXXX" maxlength="4" style="letter-spacing:10px;font-size:22px;text-align:center;font-family:'Bebas Neue',Impact,sans-serif;font-weight:700"/>
+      <button class="btn-primary" onclick="joinRoom()" style="margin-top:4px">Entrar a la sala</button>
     </div>
-    <div id="lobby-msg"></div>
+    <div id="lobby-msg" style="font-size:13px;color:var(--red);margin-top:10px;min-height:18px"></div>
   </div></div>
 </div>
 
-<!-- WAITING -->
+<!-- ═══ WAITING ═══ -->
 <div id="waiting" style="display:none">
-  <div class="overlay"><div class="box">
-    <div style="font-size:36px;margin-bottom:8px">🔗</div>
-    <h2>¡Sala lista!</h2>
-    <p>Comparte este código con tu novia</p>
-    <div class="room-code" id="room-code-display">----</div>
-    <p style="font-size:13px;color:#64748b;margin-bottom:1.5rem">Esperando al otro jugador<span class="waiting-dots"></span></p>
-    <span class="section-label">Tiempo por ronda</span>
+  <div class="overlay"><div class="modal">
+    <span class="modal-icon">🔗</span>
+    <h2>Sala Lista</h2>
+    <p class="modal-sub">Comparte este código con tu novia y espera que entre</p>
+    <div class="room-code-box">
+      <div class="room-code-label">Código de sala</div>
+      <div class="room-code-value" id="room-code-display">----</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">Esperando al otro jugador<span class="waiting-dots"></span></p>
+    <label class="input-label" style="text-align:left">Tiempo por ronda</label>
     <div class="time-row">
-      <button class="time-btn selected" id="t60" onclick="selectTime(60)">60 seg</button>
+      <button class="time-btn sel" id="t60" onclick="selectTime(60)">60 seg</button>
       <button class="time-btn" id="t90" onclick="selectTime(90)">90 seg</button>
       <button class="time-btn" id="t120" onclick="selectTime(120)">120 seg</button>
     </div>
-    <button onclick="cancelRoom()" style="width:100%;color:#f87171;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);padding:12px;border-radius:12px;margin-top:8px">Cancelar sala</button>
+    <button class="btn-danger" onclick="cancelRoom()">Cancelar sala</button>
   </div></div>
 </div>
 
-<!-- GAME -->
+<!-- ═══ GAME ═══ -->
 <div id="game" style="display:none">
   <div class="header">
-    <h1>Pasapalabra</h1>
-    <div class="sub" id="turn-label">—</div>
+    <div class="header-logo">
+      <div class="header-logo-ring">🎯</div>
+      <h1>Pasapalabra</h1>
+    </div>
+    <div class="header-sub">El Rosco</div>
+    <div class="header-turn" id="turn-label"></div>
   </div>
 
-  <div style="display:flex;justify-content:center">
-    <div id="game-badge" class="badge online"><div class="bdot"></div> Online</div>
+  <div class="conn-wrap">
+    <div id="game-badge" class="badge online"><div class="bdot"></div>Online</div>
   </div>
 
   <div class="scoreboard">
-    <div class="player-card" id="card-0">
-      <div id="me-tag-0" class="me-tag" style="display:none">Tú</div>
-      <div class="player-name" id="name-0">—</div>
-      <div class="player-score" id="score-0">0</div>
-      <div class="player-meta" id="meta-0">—</div>
+    <div class="p-card" id="card-0">
+      <div id="you-tag-0" class="p-you" style="display:none">Tú</div>
+      <div class="p-name" id="name-0">—</div>
+      <div class="p-score" id="score-0">0</div>
+      <div class="p-meta" id="meta-0">—</div>
     </div>
-    <div class="player-card" id="card-1">
-      <div id="me-tag-1" class="me-tag" style="display:none">Tú</div>
-      <div class="player-name" id="name-1">—</div>
-      <div class="player-score" id="score-1">0</div>
-      <div class="player-meta" id="meta-1">—</div>
+    <div class="p-card" id="card-1">
+      <div id="you-tag-1" class="p-you" style="display:none">Tú</div>
+      <div class="p-name" id="name-1">—</div>
+      <div class="p-score" id="score-1">0</div>
+      <div class="p-meta" id="meta-1">—</div>
     </div>
   </div>
 
   <div class="rosco-wrap">
-    <svg class="rosco-svg" viewBox="0 0 320 320" id="rosco-svg"></svg>
+    <svg class="rosco-svg" viewBox="0 0 330 330" id="rosco-svg"></svg>
     <div class="center-panel">
       <div class="cur-badge" id="cur-letter">?</div>
       <div class="timer-num" id="timer">—</div>
@@ -551,20 +572,20 @@ button.btn-end { color: var(--muted); }
   </div>
 
   <div class="legend">
-    <div class="legend-item"><div class="ldot" style="background:#22c55e;box-shadow:0 0 6px #22c55e"></div>Correcta</div>
-    <div class="legend-item"><div class="ldot" style="background:#ef4444;box-shadow:0 0 6px #ef4444"></div>Incorrecta</div>
-    <div class="legend-item"><div class="ldot" style="background:#f59e0b;box-shadow:0 0 6px #f59e0b"></div>Pasada</div>
-    <div class="legend-item"><div class="ldot" style="background:#334155"></div>Pendiente</div>
+    <div class="legend-item"><div class="ldot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>Correcta</div>
+    <div class="legend-item"><div class="ldot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>Incorrecta</div>
+    <div class="legend-item"><div class="ldot" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></div>Pasada</div>
+    <div class="legend-item"><div class="ldot" style="background:var(--muted)"></div>Pendiente</div>
   </div>
 
   <div id="spec-bar" class="spec-bar" style="display:none">
-    ⏳ Turno de <strong><span id="spec-name"></span></strong> — espera tu turno
+    ⏳ &nbsp;Es el turno de <strong id="spec-name"></strong> — espera tu turno
   </div>
 
-  <div class="q-panel">
-    <div class="q-label">Pregunta</div>
-    <div class="q-text" id="q-text">—</div>
-    <div class="q-hint" id="q-hint"></div>
+  <div class="q-wrap" id="q-wrap">
+    <div class="q-eyebrow">Pregunta</div>
+    <div class="q-text" id="q-text">Haz clic en una letra para empezar</div>
+    <div class="q-hint" id="q-hint" style="display:none"></div>
   </div>
 
   <div class="fb" id="fb">
@@ -573,37 +594,36 @@ button.btn-end { color: var(--muted); }
   </div>
 
   <div class="ans-row">
-    <input id="ans-input" placeholder="Escribe tu respuesta..." onkeydown="if(event.key==='Enter')checkAnswer()" disabled/>
-    <button class="primary btn-confirm" onclick="checkAnswer()" id="btn-ok" disabled>OK</button>
+    <input id="ans-input" placeholder="Tu respuesta..." onkeydown="if(event.key==='Enter')checkAnswer()" disabled/>
+    <button class="btn-confirm" onclick="checkAnswer()" id="btn-ok" disabled>OK</button>
   </div>
 
-  <div class="btn-row">
-    <button class="btn-pass" onclick="passLetter()" id="btn-pass" disabled>→ Pasapalabra</button>
-    <button class="btn-wrong" onclick="wrongAnswer()" id="btn-wrong" disabled>✗ Incorrecta</button>
-    <button onclick="endTurn()" id="btn-end" disabled>Terminar turno</button>
+  <div class="action-row">
+    <button class="action-btn btn-pass"  onclick="passLetter()"  id="btn-pass"  disabled>→ Pasapalabra</button>
+    <button class="action-btn btn-wrong" onclick="wrongAnswer()" id="btn-wrong" disabled>✗ Incorrecta</button>
+    <button class="action-btn btn-end"   onclick="endTurn()"     id="btn-end"   disabled>Terminar turno</button>
   </div>
 </div>
 
-<!-- RESULTS -->
+<!-- ═══ RESULTS ═══ -->
 <div id="results" style="display:none">
-  <div class="overlay"><div class="box">
-    <span class="winner-badge" id="winner-emoji">🏆</span>
-    <div class="winner-name" id="winner-title">¡Fin!</div>
-    <p id="winner-sub" style="margin-bottom:1.5rem"></p>
+  <div class="overlay"><div class="modal">
+    <span class="winner-trophy" id="winner-emoji">🏆</span>
+    <div class="winner-name" id="winner-title">Fin</div>
+    <p class="modal-sub" id="winner-sub" style="margin-top:4px"></p>
     <div class="tab-row">
       <button class="tab-btn active" id="tab-summary" onclick="showTab('summary')">Resumen</button>
-      <button class="tab-btn" id="tab-p0" onclick="showTab('p0')">P1</button>
-      <button class="tab-btn" id="tab-p1" onclick="showTab('p1')">P2</button>
+      <button class="tab-btn" id="tab-p0" onclick="showTab('p0')">—</button>
+      <button class="tab-btn" id="tab-p1" onclick="showTab('p1')">—</button>
     </div>
     <div id="tc-summary"></div>
     <div id="tc-p0" style="display:none"></div>
     <div id="tc-p1" style="display:none"></div>
-    <button class="primary" onclick="location.reload()" style="width:100%;padding:14px;font-size:15px;border-radius:14px;margin-top:1rem">Jugar de nuevo 🎯</button>
+    <button class="btn-primary" onclick="location.reload()" style="margin-top:1.25rem">Jugar de nuevo 🎯</button>
   </div></div>
 </div>
 
-</div><!-- #app -->
-
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getDatabase, ref, set, get, update, onValue, remove, off } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
@@ -622,29 +642,282 @@ const db = getDatabase(app);
 const LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','X'];
 
 const BANK = {
-  A:[{q:"Con la A. Continente mas grande del mundo.",ans:"ASIA"},{q:"Con la A. Pais sudamericano cuya capital es Buenos Aires.",ans:"ARGENTINA"},{q:"Con la A. Color del cielo despejado.",ans:"AZUL"},{q:"Con la A. Instrumento de cuerda triangular que se pulsa.",ans:"ARPA"},{q:"Con la A. Ave rapaz simbolo de muchos paises.",ans:"AGUILA"},{q:"Con la A. Fruta tropical de cascara con escamas y pulpa amarilla.",ans:"ANANAS",alt:["ANANA"]},{q:"Con la A. Rio mas largo de Sudamerica.",ans:"AMAZONAS"}],
-  B:[{q:"Con la B. Pais mas grande de America del Sur.",ans:"BRASIL"},{q:"Con la B. Mamifero marino mas grande del mundo.",ans:"BALLENA"},{q:"Con la B. Deporte en cancha con aro y pelota naranja.",ans:"BASQUETBOL",alt:["BALONCESTO","BASKETBALL"]},{q:"Con la B. Reptil sin patas que se enrolla en sus presas.",ans:"BOA"},{q:"Con la B. Instrumento de percusion que se golpea con maza.",ans:"BOMBO"},{q:"Con la B. Pais de los Balcanes cuya capital es Sofia.",ans:"BULGARIA"},{q:"Con la B. Capital de Alemania.",ans:"BERLIN"}],
-  C:[{q:"Con la C. Pais sudamericano cuya capital es Santiago.",ans:"CHILE"},{q:"Con la C. Capital de Australia.",ans:"CANBERRA"},{q:"Con la C. Ave tropical que imita la voz humana.",ans:"COTORRA",alt:["CACATUA"]},{q:"Con la C. Pais mas poblado del mundo.",ans:"CHINA"},{q:"Con la C. Instrumento de teclas antecesor del piano.",ans:"CLAVICORDIO"},{q:"Con la C. Felino mas veloz en tierra, con manchas negras.",ans:"CHITA",alt:["GUEPARDO"]},{q:"Con la C. Pais de Asia cuya capital es Seoul.",ans:"COREA",alt:["KOREA"]}],
-  D:[{q:"Con la D. Mes de las fiestas navidenas.",ans:"DICIEMBRE"},{q:"Con la D. Pais europeo cuya capital es Copenhague.",ans:"DINAMARCA"},{q:"Con la D. Rio mas largo de Europa central.",ans:"DANUBIO"},{q:"Con la D. Dios griego del vino y las fiestas.",ans:"DIONISIO"},{q:"Con la D. Figura geometrica con diez lados.",ans:"DECAGONO"},{q:"Con la D. Moneda oficial de los Emiratos Arabes.",ans:"DIRHAM"},{q:"Con la D. Instrumento de viento tipico del folklore andino.",ans:"DULZAINA",alt:["CHARANGO"]}],
-  E:[{q:"Con la E. Pais sudamericano atravesado por la linea del ecuador.",ans:"ECUADOR"},{q:"Con la E. Continente donde estan Francia, Alemania e Italia.",ans:"EUROPA"},{q:"Con la E. Animal mas grande que vive en tierra firme.",ans:"ELEFANTE"},{q:"Con la E. Animal marino espinoso parecido a una pelota.",ans:"ERIZO"},{q:"Con la E. Pais iberico donde se habla castellano.",ans:"ESPANA"},{q:"Con la E. Montana mas alta del mundo, en Nepal.",ans:"EVEREST"},{q:"Con la E. Pais africano donde estan las piramides de Giza.",ans:"EGIPTO"}],
-  F:[{q:"Con la F. Deporte con once jugadores por lado y pelota redonda.",ans:"FUTBOL"},{q:"Con la F. Instrumento de viento que se sopla de costado.",ans:"FLAUTA"},{q:"Con la F. Pais de Europa cuya capital es Paris.",ans:"FRANCIA"},{q:"Con la F. Proceso por el que las plantas producen energia con luz.",ans:"FOTOSINTESIS"},{q:"Con la F. Pais nordico cuya capital es Helsinki.",ans:"FINLANDIA"},{q:"Con la F. Ciudad italiana famosa por el arte del Renacimiento.",ans:"FLORENCIA"},{q:"Con la F. Figura geometrica de tres lados.",ans:"FIGURA",alt:["TRIANGULO"]}],
-  G:[{q:"Con la G. Pais donde esta la Acropolis de Atenas.",ans:"GRECIA"},{q:"Con la G. Instrumento de cuerda con seis cuerdas.",ans:"GUITARRA"},{q:"Con la G. Mamifero africano de cuello muy largo.",ans:"GIRAFA"},{q:"Con la G. Pais africano cuya capital es Accra.",ans:"GHANA"},{q:"Con la G. Mamifero sudamericano parecido al camello sin joroba.",ans:"GUANACO"},{q:"Con la G. Pais del sur de Europa cuya capital es Atenas.",ans:"GRECIA"},{q:"Con la G. Rio mas caudaloso de Europa.",ans:"GARONA",alt:["VOLGA"]}],
-  H:[{q:"Con la H. Metal mas abundante en la sangre y en el acero.",ans:"HIERRO"},{q:"Con la H. Capital de Cuba.",ans:"HABANA",alt:["LA HABANA"]},{q:"Con la H. Deporte que se juega sobre hielo con disco.",ans:"HOCKEY"},{q:"Con la H. Ave nocturna de gran cabeza y ojos grandes.",ans:"HALCON",alt:["LECHUZA"]},{q:"Con la H. Pais de Europa cuya capital es Budapest.",ans:"HUNGRIA"},{q:"Con la H. Pais de Centroamerica cuya capital es Tegucigalpa.",ans:"HONDURAS"},{q:"Con la H. Planta cuya flor gira siguiendo al sol.",ans:"HELIOTROPO",alt:["GIRASOL"]}],
-  I:[{q:"Con la I. Pais conocido como la bota, en el Mediterraneo.",ans:"ITALIA"},{q:"Con la I. Pais asiatico donde se invento el yoga.",ans:"INDIA"},{q:"Con la I. Pais cuya capital es Reikiavik, tierra de volcanes.",ans:"ISLANDIA"},{q:"Con la I. Pais de Oriente Medio cuya capital es Teheran.",ans:"IRAN"},{q:"Con la I. Pais insular al oeste de Gran Bretana.",ans:"IRLANDA"},{q:"Con la I. Pais donde esta el Coliseo Romano.",ans:"ITALIA"},{q:"Con la I. Rio sagrado de la India.",ans:"INDO",alt:["GANGES"]}],
-  J:[{q:"Con la J. Planeta mas grande del sistema solar.",ans:"JUPITER"},{q:"Con la J. Pais asiatico de islas donde se habla japones.",ans:"JAPON"},{q:"Con la J. Ciudad santa para tres religiones monoteistas.",ans:"JERUSALEN"},{q:"Con la J. Felino mas grande de America, con manchas en rosetas.",ans:"JAGUAR"},{q:"Con la J. Deporte de combate japones que usa cinturon de colores.",ans:"JUDO"},{q:"Con la J. Pais de Oriente Medio cuya capital es Amman.",ans:"JORDANIA"},{q:"Con la J. Idioma que se habla en Japon.",ans:"JAPONES"}],
-  K:[{q:"Con la K. Animal marsupial australiano que salta.",ans:"KANGURO"},{q:"Con la K. Animal parecido a un oso que vive en eucaliptos.",ans:"KOALA"},{q:"Con la K. Fruta pequena verde con pelito, de Nueva Zelanda.",ans:"KIWI"},{q:"Con la K. Pais africano cuya capital es Nairobi.",ans:"KENIA"},{q:"Con la K. Pais de Asia oriental dividido en norte y sur.",ans:"KOREA",alt:["COREA"]},{q:"Con la K. Montana mas alta de Africa.",ans:"KILIMANJARO"},{q:"Con la K. Arte marcial de origen coreano, deporte olimpico.",ans:"KARATE",alt:["TAEKWONDO"]}],
-  L:[{q:"Con la L. Satelite natural de la Tierra.",ans:"LUNA"},{q:"Con la L. Capital del Peru.",ans:"LIMA"},{q:"Con la L. Felino africano de gran melena, rey de la selva.",ans:"LEON"},{q:"Con la L. Fruta citrica pequena y amarilla muy acida.",ans:"LIMON"},{q:"Con la L. Pais de Europa entre Espana y Francia sin salida al mar.",ans:"LUXEMBURGO"},{q:"Con la L. Instrumento de cuerda medieval parecido a la guitarra.",ans:"LAUD"},{q:"Con la L. Capital de Bolivia, la mas alta del mundo.",ans:"LA PAZ",alt:["LAPAZ"]}],
-  M:[{q:"Con la M. Capital de Espana.",ans:"MADRID"},{q:"Con la M. Fruto redondo rojo que crece en el manzano.",ans:"MANZANA"},{q:"Con la M. Animal marino con tentaculos translucidos que pica.",ans:"MEDUSA"},{q:"Con la M. Pais de Norteamerica cuya capital es Ciudad de Mexico.",ans:"MEXICO"},{q:"Con la M. Planeta rojo del sistema solar.",ans:"MARTE"},{q:"Con la M. Pais del norte de Africa famoso por sus dunas y camellos.",ans:"MARRUECOS"},{q:"Con la M. Rio mas largo de Norteamerica.",ans:"MISISIPI"}],
-  N:[{q:"Con la N. Rio mas largo de Africa.",ans:"NILO"},{q:"Con la N. Pais escandinavo famoso por sus fiordos.",ans:"NORUEGA"},{q:"Con la N. Pais de Centroamerica cuya capital es Managua.",ans:"NICARAGUA"},{q:"Con la N. Gas noble en letreros luminosos, simbolo Ne.",ans:"NEON"},{q:"Con la N. Deporte acuatico en piscina con brazadas.",ans:"NATACION"},{q:"Con la N. Pais del sur de Africa cuya capital es Windhoek.",ans:"NAMIBIA"},{q:"Con la N. Pais escandinavo cuya capital es Oslo.",ans:"NORUEGA"}],
-  O:[{q:"Con la O. Capital de Noruega.",ans:"OSLO"},{q:"Con la O. Color entre amarillo y rojo, como la fruta.",ans:"OCRE",alt:["NARANJA"]},{q:"Con la O. Animal marino de ocho tentaculos y tinta.",ans:"OCTOPUS",alt:["PULPO"]},{q:"Con la O. Instrumento musical de muchos tubos en iglesias.",ans:"ORGANO"},{q:"Con la O. Continente-pais rodeado completamente de oceano.",ans:"OCEANIA",alt:["AUSTRALIA"]},{q:"Con la O. Montana griega morada de los dioses.",ans:"OLIMPO"},{q:"Con la O. Pais nordico cuya capital es Oslo.",ans:"NORUEGA",alt:["OSLO"]}],
-  P:[{q:"Con la P. Capital de Francia.",ans:"PARIS"},{q:"Con la P. Ave que no puede volar y vive en el polo sur.",ans:"PINGUINO"},{q:"Con la P. Mamifero negro y blanco simbolo de China.",ans:"PANDA"},{q:"Con la P. Pais de Sudamerica cuya capital es Asuncion.",ans:"PARAGUAY"},{q:"Con la P. Pais europeo cuya capital es Varsovia.",ans:"POLONIA"},{q:"Con la P. Deporte de raqueta que se juega en mesa pequena.",ans:"PINGPONG",alt:["PING PONG"]},{q:"Con la P. Planeta enano al borde del sistema solar.",ans:"PLUTON"}],
-  Q:[{q:"Con la Q. Capital del Ecuador.",ans:"QUITO"},{q:"Con la Q. Cereal andino muy nutritivo, pseudocereal.",ans:"QUINOA"},{q:"Con la Q. Personaje literario que lucha contra molinos de viento.",ans:"QUIJOTE"},{q:"Con la Q. Sustancia amarga del agua tonica.",ans:"QUININA"},{q:"Con la Q. Pais del Golfo Persico cuya capital es Doha.",ans:"QATAR"},{q:"Con la Q. Alimento lacteo solido de muchas variedades.",ans:"QUESO"},{q:"Con la Q. Particula subatomica que forma los protones.",ans:"QUARK"}],
-  R:[{q:"Con la R. Capital de Italia.",ans:"ROMA"},{q:"Con la R. Color del tomate maduro.",ans:"ROJO"},{q:"Con la R. Animal roedor con cola larga que vive en ciudades.",ans:"RATON",alt:["RATA"]},{q:"Con la R. Deporte con pelota ovalada que se lleva con las manos.",ans:"RUGBY"},{q:"Con la R. Pais europeo cuya capital es Bucarest.",ans:"RUMANIA"},{q:"Con la R. Instrumento de percusion, tambor pequeno con palillos.",ans:"REDOBLANTE"},{q:"Con la R. Pais mas grande del mundo cuya capital es Moscu.",ans:"RUSIA"}],
-  S:[{q:"Con la S. Astro central del sistema solar.",ans:"SOL"},{q:"Con la S. Capital de Chile.",ans:"SANTIAGO"},{q:"Con la S. Pais donde estan Ginebra y Zurich.",ans:"SUIZA"},{q:"Con la S. Pais nordico cuya capital es Estocolmo.",ans:"SUECIA"},{q:"Con la S. Instrumento de viento de metal inventado por Adolphe Sax.",ans:"SAXOFON"},{q:"Con la S. Pais de Asia Menor cuya capital es Damasco.",ans:"SIRIA"},{q:"Con la S. Animal marino de sangre fria con aleta dorsal.",ans:"SALMON",alt:["TIBURON"]}],
-  T:[{q:"Con la T. Capital de Japon.",ans:"TOKIO"},{q:"Con la T. Pais asiatico cuya capital es Bangkok.",ans:"TAILANDIA"},{q:"Con la T. Rio que atraviesa la ciudad de Londres.",ans:"TAMESIS"},{q:"Con la T. Pais de Asia Menor cuya capital es Ankara.",ans:"TURQUIA"},{q:"Con la T. Instrumento de percusion de parche que se golpea.",ans:"TIMBAL",alt:["TAMBOR"]},{q:"Con la T. Pais de Africa del Norte cuya capital es Tunez.",ans:"TUNEZ"},{q:"Con la T. Instrumento de viento de metal en forma de U.",ans:"TUBA",alt:["TROMBON"]}],
-  U:[{q:"Con la U. Pais de America del Sur cuya capital es Montevideo.",ans:"URUGUAY"},{q:"Con la U. Planeta del sistema solar con anillos inclinados.",ans:"URANO"},{q:"Con la U. Pais de Europa del Este cuya capital es Kyiv.",ans:"UCRANIA"},{q:"Con la U. Instrumento de cuatro cuerdas originario de Hawaii.",ans:"UKELELE"},{q:"Con la U. Pais de Asia Central cuya capital es Taskent.",ans:"UZBEKISTAN"},{q:"Con la U. Ciudad italiana con una de las universidades mas antiguas.",ans:"URBINO",alt:["PADUA"]},{q:"Con la U. Pais del este de Europa que viste naranja en el futbol.",ans:"UCRANIA"}],
-  V:[{q:"Con la V. Ciudad italiana famosa por sus canales y gondolas.",ans:"VENECIA"},{q:"Con la V. Segundo planeta del sistema solar.",ans:"VENUS"},{q:"Con la V. Capital de Austria.",ans:"VIENA"},{q:"Con la V. Pais de Sudamerica cuya capital es Caracas.",ans:"VENEZUELA"},{q:"Con la V. Deporte de playa con red y balon.",ans:"VOLEYBOL",alt:["VOLEIBOL"]},{q:"Con la V. Instrumento de cuerda frotada con arco, el mas agudo.",ans:"VIOLIN"},{q:"Con la V. Pais de Asia cuya capital es Hanoi.",ans:"VIETNAM"}],
-  X:[{q:"Con la X. Instrumento de percusion de laminas de madera.",ans:"XILOFONO"},{q:"Con la X. Tecnica medica que permite ver los huesos.",ans:"XRAY",alt:["RAYOS X"]},{q:"Con la X. Capital del estado mexicano de Veracruz.",ans:"XALAPA"},{q:"Con la X. Numero diez en la numeracion romana.",ans:"X",alt:["DIEZ"]},{q:"Con la X. Fruta de cactus con pulpa roja usada en Mexico.",ans:"XOCONOSTLE"},{q:"Con la X. Particula subatomica hipotetica de materia oscura.",ans:"XIMON",alt:["WIMP"]},{q:"Con la X. Municipio de Mexico famoso por sus jardines flotantes.",ans:"XOCHIMILCO"}],
+  A:[
+    {q:"Con la A. Arte de doblar papel para crear figuras, originario de Japon.",ans:"ARTE",alt:["ORIGAMI"]},
+    {q:"Con la A. Instrumento de cuerda triangular que se pulsa verticalmente.",ans:"ARPA"},
+    {q:"Con la A. Deporte donde se nada, se pedalea y se corre.",ans:"ATLETISMO",alt:["TRIATLON"]},
+    {q:"Con la A. Ave rapaz nocturna simbolo de la sabiduria.",ans:"AGUILA",alt:["LECHUZA","BUHO"]},
+    {q:"Con la A. Personaje de Disney que vive en el pais de las maravillas.",ans:"ALICIA"},
+    {q:"Con la A. Fruto seco muy usado en reposteria, de color marron.",ans:"ALMENDRA"},
+    {q:"Con la A. Rio mas largo de Sudamerica.",ans:"AMAZONAS"},
+    {q:"Con la A. Proceso de calentar y enfriar metales para hacerlos mas resistentes.",ans:"ALEACION"},
+    {q:"Con la A. Instrumento musical de viento con fuelle, tipico del tango.",ans:"ACORDEON"},
+    {q:"Con la A. Serie de Netflix sobre una reina britanica.",ans:"ABYECTO",alt:["THE CROWN"]},
+  ],
+  B:[
+    {q:"Con la B. Instrumento de percusion que se golpea con maza.",ans:"BOMBO"},
+    {q:"Con la B. Baile de salon elegante en compas de tres tiempos.",ans:"BALSE",alt:["VALS"]},
+    {q:"Con la B. Superhroe de DC Comics, el hombre murcielago.",ans:"BATMAN"},
+    {q:"Con la B. Fruto pequeno azul oscuro lleno de antioxidantes.",ans:"BLUEBERRY",alt:["ARANDANO"]},
+    {q:"Con la B. Deporte en que se golpea una pelota con un bate.",ans:"BEISBOL"},
+    {q:"Con la B. Compositor aleman sordo autor de nueve sinfonias.",ans:"BEETHOVEN"},
+    {q:"Con la B. Sustancia que producen las abejas para endulzar.",ans:"BREA",alt:["MIEL"]},
+    {q:"Con la B. Animal marino con ocho tentaculos e inteligencia sorprendente.",ans:"BENTOS",alt:["PULPO"]},
+    {q:"Con la B. Juego de mesa donde se hunden barcos en una cuadricula.",ans:"BATALLA",alt:["BATALLA NAVAL"]},
+    {q:"Con la B. Capital de Alemania.",ans:"BERLIN"},
+  ],
+  C:[
+    {q:"Con la C. Peliculas animadas de Pixar sobre un nino y su abuelo musico.",ans:"COCO"},
+    {q:"Con la C. Bebida italiana hecha de cafe expreso y leche espumada.",ans:"CAPUCHINO"},
+    {q:"Con la C. Deporte donde se golpea una pelota con palo en hoyos.",ans:"GOLF",alt:["CRICKET"]},
+    {q:"Con la C. Instrumento de teclas antecesor del piano.",ans:"CLAVICORDIO"},
+    {q:"Con la C. Pais sudamericano cuya capital es Santiago.",ans:"CHILE"},
+    {q:"Con la C. Personaje de Marvel que lleva un escudo.",ans:"CAPITAN AMERICA"},
+    {q:"Con la C. Animal mas veloz en tierra firme.",ans:"CHITA",alt:["GUEPARDO"]},
+    {q:"Con la C. Pasta italiana en forma de tubo corto.",ans:"CANELONES",alt:["RIGATONI"]},
+    {q:"Con la C. Reina de Egipto famosa por su belleza e inteligencia.",ans:"CLEOPATRA"},
+    {q:"Con la C. Sustancia negra y amarga que mantiene despierto.",ans:"CAFEINA"},
+  ],
+  D:[
+    {q:"Con la D. Mes de las fiestas navidenas.",ans:"DICIEMBRE"},
+    {q:"Con la D. Personaje de Disney que es un pato con voz chillona.",ans:"DONALD"},
+    {q:"Con la D. Dios griego del vino y las fiestas.",ans:"DIONISIO"},
+    {q:"Con la D. Instrumento musical de percusion con dos parches.",ans:"DJEMBE"},
+    {q:"Con la D. Pintor espanol surrealista famoso por sus relojes derretidos.",ans:"DALI"},
+    {q:"Con la D. Vitamina que el cuerpo produce con la luz solar.",ans:"VITAMINA D",alt:["D"]},
+    {q:"Con la D. Deporte que combina arco y flecha sobre una diana.",ans:"DARDOS",alt:["TIRO CON ARCO"]},
+    {q:"Con la D. Baile caribeno de ritmo alegre tipico de Republica Dominicana.",ans:"DOMINICANA",alt:["MERENGUE"]},
+    {q:"Con la D. Serie animada de un nino con un laboratorio secreto.",ans:"DEXTER"},
+    {q:"Con la D. Rio mas largo de Europa central.",ans:"DANUBIO"},
+  ],
+  E:[
+    {q:"Con la E. Animal mas grande que vive en tierra firme.",ans:"ELEFANTE"},
+    {q:"Con la E. Inventor de la bombilla y el fonografo.",ans:"EDISON"},
+    {q:"Con la E. Pais iberico donde se habla castellano.",ans:"ESPANA"},
+    {q:"Con la E. Animal marino espinoso que se enrolla.",ans:"ERIZO"},
+    {q:"Con la E. Montana mas alta del mundo, en Nepal.",ans:"EVEREST"},
+    {q:"Con la E. Proceso de que una oruga se convierte en mariposa.",ans:"EVOLUCION",alt:["METAMORFOSIS"]},
+    {q:"Con la E. Musico inventor que se le atribuye la bombilla y el fonografo.",ans:"EDISON"},
+    {q:"Con la E. Juego de mesa de estrategia con rey, reina, torres y peones.",ans:"ESTRATEGIA",alt:["AJEDREZ"]},
+    {q:"Con la E. Pelicula de Pixar sobre robots en un planeta abandonado.",ans:"EVE",alt:["WALL-E"]},
+    {q:"Con la E. Pais africano donde estan las piramides de Giza.",ans:"EGIPTO"},
+  ],
+  F:[
+    {q:"Con la F. Deporte con once jugadores por lado y pelota redonda.",ans:"FUTBOL"},
+    {q:"Con la F. Instrumento de viento que se sopla de costado.",ans:"FLAUTA"},
+    {q:"Con la F. Proceso por el que las plantas producen energia con luz.",ans:"FOTOSINTESIS"},
+    {q:"Con la F. Personaje principal de Forrest Gump interpretado por Tom Hanks.",ans:"FORREST"},
+    {q:"Con la F. Pasta italiana en forma de cintas planas y anchas.",ans:"FETUCCINI",alt:["FETTUCCINE"]},
+    {q:"Con la F. Pais nordico cuya capital es Helsinki.",ans:"FINLANDIA"},
+    {q:"Con la F. Ciudad italiana famosa por el Renacimiento y el David de Miguel Angel.",ans:"FLORENCIA"},
+    {q:"Con la F. Fruta tropical con cascara verde y pulpa rosada.",ans:"FRAMBUESA",alt:["FRESA"]},
+    {q:"Con la F. Serie de terror sobre un monstruo con guantes de cuchillas.",ans:"FREDDY"},
+    {q:"Con la F. Deporte olimpico de combate con espadas.",ans:"ESGRIMA",alt:["FENCING"]},
+  ],
+  G:[
+    {q:"Con la G. Instrumento de cuerda con seis cuerdas.",ans:"GUITARRA"},
+    {q:"Con la G. Pais donde esta la Acropolis de Atenas.",ans:"GRECIA"},
+    {q:"Con la G. Mamifero africano de cuello muy largo.",ans:"GIRAFA"},
+    {q:"Con la G. Pelicula de Spielberg sobre un tiburon asesino.",ans:"GRAN TIBURON",alt:["JAWS"]},
+    {q:"Con la G. Instrumento musical de ocho cuerdas tipico de Mexico.",ans:"GUITARRON"},
+    {q:"Con la G. Fruta pequena verde o morada que crece en racimos.",ans:"UVA",alt:["GRAPE"]},
+    {q:"Con la G. Genero musical que mezcla blues y folk, tipico de los 60.",ans:"GRUNGE",alt:["FOLK"]},
+    {q:"Con la G. Tipo de queso suizo con agujeros.",ans:"GRUYERE"},
+    {q:"Con la G. Mamifero sudamericano parecido al camello sin joroba.",ans:"GUANACO"},
+    {q:"Con la G. Premio mas importante del cine mundial.",ans:"OSCAR",alt:["GLOBO DE ORO"]},
+  ],
+  H:[
+    {q:"Con la H. Metal mas abundante en la sangre y en el acero.",ans:"HIERRO"},
+    {q:"Con la H. Mago protagonista de la saga de J.K. Rowling.",ans:"HARRY POTTER",alt:["HARRY"]},
+    {q:"Con la H. Deporte que se juega sobre hielo con disco.",ans:"HOCKEY"},
+    {q:"Con la H. Pintor de los girasoles que se corto la oreja.",ans:"HOLANDA",alt:["VAN GOGH"]},
+    {q:"Con la H. Pais de Europa cuya capital es Budapest.",ans:"HUNGRIA"},
+    {q:"Con la H. Planta cuya flor gira siguiendo al sol.",ans:"HELIOTROPO",alt:["GIRASOL"]},
+    {q:"Con la H. Instrumento de percusion de mano cubano que se agita.",ans:"HUESERA",alt:["CLAVES"]},
+    {q:"Con la H. Personaje de Marvel con armadura roja y dorada, apellido Stark.",ans:"HOMBRE DE HIERRO",alt:["IRON MAN"]},
+    {q:"Con la H. Tecnica de medicina alternativa japonesa con agujas.",ans:"HIERBAS",alt:["ACUPUNTURA"]},
+    {q:"Con la H. Primera lengua franca de internet.",ans:"INGLES",alt:["HTML"]},
+  ],
+  I:[
+    {q:"Con la I. Pais conocido como la bota, en el Mediterraneo.",ans:"ITALIA"},
+    {q:"Con la I. Pais asiatico donde se invento el yoga.",ans:"INDIA"},
+    {q:"Con la I. Pais cuya capital es Reikiavik, tierra de volcanes.",ans:"ISLANDIA"},
+    {q:"Con la I. Fruta tropical de cascara amarilla y pulpa naranja muy dulce.",ans:"INGA",alt:["PAPAYA"]},
+    {q:"Con la I. Idioma oficial de Brasil.",ans:"INGLES",alt:["PORTUGUES"]},
+    {q:"Con la I. Organo del cuerpo que produce insulina.",ans:"INTESTINO",alt:["PANCREAS"]},
+    {q:"Con la I. Filosofo griego que fue maestro de Alejandro Magno.",ans:"IDEAS",alt:["ARISTOTELES"]},
+    {q:"Con la I. Isla mediterranea donde nacio Napoleon Bonaparte.",ans:"ITALIA",alt:["CORCEGA"]},
+    {q:"Con la I. Personaje de la Odisea que tarda 20 anos en volver a casa.",ans:"ITACA",alt:["ODISEO"]},
+    {q:"Con la I. Pais insular al oeste de Gran Bretana.",ans:"IRLANDA"},
+  ],
+  J:[
+    {q:"Con la J. Planeta mas grande del sistema solar.",ans:"JUPITER"},
+    {q:"Con la J. Pais asiatico de islas donde se habla japones.",ans:"JAPON"},
+    {q:"Con la J. Ciudad santa para tres religiones monoteistas.",ans:"JERUSALEN"},
+    {q:"Con la J. Felino mas grande de America, con manchas en rosetas.",ans:"JAGUAR"},
+    {q:"Con la J. Deporte de combate japones que usa cinturon de colores.",ans:"JUDO"},
+    {q:"Con la J. Cantante que vendio mas discos en la historia.",ans:"JACKSON",alt:["MICHAEL JACKSON"]},
+    {q:"Con la J. Juego de cartas espanol con oros, copas, espadas y bastos.",ans:"BARAJA",alt:["JUEGO DE NAIPES"]},
+    {q:"Con la J. Juego de cartas en que el objetivo es llegar a 21 puntos.",ans:"JULEPE",alt:["BLACKJACK"]},
+    {q:"Con la J. Genero musical cubano con ritmos rapidos y sincopados.",ans:"JAZZ",alt:["SALSA"]},
+    {q:"Con la J. Idioma que se habla en Japon.",ans:"JAPONES"},
+  ],
+  K:[
+    {q:"Con la K. Animal marsupial australiano que salta.",ans:"KANGURO"},
+    {q:"Con la K. Animal parecido a un oso que vive en eucaliptos.",ans:"KOALA"},
+    {q:"Con la K. Fruta pequena verde con pelito, de Nueva Zelanda.",ans:"KIWI"},
+    {q:"Con la K. Pais africano cuya capital es Nairobi.",ans:"KENIA"},
+    {q:"Con la K. Montana mas alta de Africa.",ans:"KILIMANJARO"},
+    {q:"Con la K. Arte marcial de origen coreano, deporte olimpico.",ans:"KARATE",alt:["TAEKWONDO"]},
+    {q:"Con la K. Superhroe de DC Comics que viene del planeta Kripton.",ans:"SUPERMAN",alt:["KRYPTONIAN"]},
+    {q:"Con la K. Bebida fermentada japones hecha de arroz.",ans:"SAKE",alt:["KOMBUCHA"]},
+    {q:"Con la K. Instrumento de viento de Escocia que suena como bolsas.",ans:"GAITA",alt:["KILT"]},
+    {q:"Con la K. Pais de Asia oriental dividido en norte y sur.",ans:"KOREA",alt:["COREA"]},
+  ],
+  L:[
+    {q:"Con la L. Satelite natural de la Tierra.",ans:"LUNA"},
+    {q:"Con la L. Capital del Peru.",ans:"LIMA"},
+    {q:"Con la L. Felino africano de gran melena, rey de la selva.",ans:"LEON"},
+    {q:"Con la L. Fruta citrica pequena y amarilla muy acida.",ans:"LIMON"},
+    {q:"Con la L. Instrumento de cuerda medieval parecido a la guitarra.",ans:"LAUD"},
+    {q:"Con la L. Pelicula de Disney sobre una sirenita.",ans:"LA SIRENITA",alt:["ARIEL"]},
+    {q:"Con la L. Pintor italiano que pinto la Mona Lisa.",ans:"LEONARDO",alt:["DA VINCI"]},
+    {q:"Con la L. Juego de video de plomero que rescata a una princesa.",ans:"LUIGI",alt:["MARIO"]},
+    {q:"Con la L. Pais de Europa entre Espana y Francia sin salida al mar.",ans:"LUXEMBURGO"},
+    {q:"Con la L. Bebida alcholica italiana de limon.",ans:"LIMONCELLO"},
+  ],
+  M:[
+    {q:"Con la M. Capital de Espana.",ans:"MADRID"},
+    {q:"Con la M. Fruto redondo rojo que crece en el manzano.",ans:"MANZANA"},
+    {q:"Con la M. Animal marino con tentaculos translucidos que pica.",ans:"MEDUSA"},
+    {q:"Con la M. Pais de Norteamerica cuya capital es Ciudad de Mexico.",ans:"MEXICO"},
+    {q:"Con la M. Planeta rojo del sistema solar.",ans:"MARTE"},
+    {q:"Con la M. Rio mas largo de Norteamerica.",ans:"MISISIPI"},
+    {q:"Con la M. Musica clasica para piano de Erik Satie usada en comerciales.",ans:"MUSICA",alt:["GIMNOPEDIA"]},
+    {q:"Con la M. Personaje de videojuego italiano que rescata a una princesa.",ans:"MARIO"},
+    {q:"Con la M. Cantante colombiana famosa por sus caderas.",ans:"MOGOLLONA",alt:["SHAKIRA"]},
+    {q:"Con la M. Queso italiano suave y blanco usado en pizza.",ans:"MOZZARELLA"},
+  ],
+  N:[
+    {q:"Con la N. Rio mas largo de Africa.",ans:"NILO"},
+    {q:"Con la N. Pais escandinavo famoso por sus fiordos.",ans:"NORUEGA"},
+    {q:"Con la N. Pais de Centroamerica cuya capital es Managua.",ans:"NICARAGUA"},
+    {q:"Con la N. Gas noble en letreros luminosos, simbolo Ne.",ans:"NEON"},
+    {q:"Con la N. Deporte acuatico en piscina con brazadas.",ans:"NATACION"},
+    {q:"Con la N. Plataforma de streaming de series y peliculas.",ans:"NETFLIX"},
+    {q:"Con la N. Personaje de Breaking Bad cuyo apodo es Heisenberg.",ans:"NEMO",alt:["WHITE"]},
+    {q:"Con la N. Consola de videojuegos japonesa con el fontanero.",ans:"NINTENDO"},
+    {q:"Con la N. Cientifico que descubrio la gravedad al ver caer una manzana.",ans:"NEWTON"},
+    {q:"Con la N. Fruto seco con una capa dura y sabor intenso.",ans:"NUEZ"},
+  ],
+  O:[
+    {q:"Con la O. Capital de Noruega.",ans:"OSLO"},
+    {q:"Con la O. Animal marino de ocho tentaculos e inteligente.",ans:"OCTOPUS",alt:["PULPO"]},
+    {q:"Con la O. Instrumento musical de muchos tubos en iglesias.",ans:"ORGANO"},
+    {q:"Con la O. Continente-pais rodeado completamente de oceano.",ans:"OCEANIA",alt:["AUSTRALIA"]},
+    {q:"Con la O. Montana griega morada de los dioses.",ans:"OLIMPO"},
+    {q:"Con la O. Premio de cine mas importante de Hollywood.",ans:"OSCAR"},
+    {q:"Con la O. Fruto de arbol mediterraneo del que se extrae aceite.",ans:"OLIVA",alt:["ACEITUNA"]},
+    {q:"Con la O. Premio de cine que se entrega en Hollywood.",ans:"OSCAR"},
+    {q:"Con la O. Deporte con arco y diana a distancia.",ans:"OLIMPICO",alt:["TIRO CON ARCO"]},
+    {q:"Con la O. Personaje de Hamlet que enloquece y se ahoga.",ans:"OFELIA"},
+  ],
+  P:[
+    {q:"Con la P. Capital de Francia.",ans:"PARIS"},
+    {q:"Con la P. Ave que no puede volar y vive en el polo sur.",ans:"PINGUINO"},
+    {q:"Con la P. Mamifero negro y blanco simbolo de China.",ans:"PANDA"},
+    {q:"Con la P. Pais de Sudamerica cuya capital es Asuncion.",ans:"PARAGUAY"},
+    {q:"Con la P. Deporte de raqueta que se juega en mesa pequena.",ans:"PINGPONG",alt:["PING PONG"]},
+    {q:"Con la P. Planeta enano al borde del sistema solar.",ans:"PLUTON"},
+    {q:"Con la P. Pintor espanol de Las Meninas y el Guernica.",ans:"PICASSO"},
+    {q:"Con la P. Pelicula de Disney sobre una marioneta que quiere ser real.",ans:"PINOCHO"},
+    {q:"Con la P. Fruta tropical con cascara espinosa y pulpa amarilla.",ans:"PINA",alt:["ANANAS"]},
+    {q:"Con la P. Instrumento de viento andino hecho de canas.",ans:"PINGULLO",alt:["ZAMPOÑA"]},
+  ],
+  Q:[
+    {q:"Con la Q. Capital del Ecuador.",ans:"QUITO"},
+    {q:"Con la Q. Cereal andino muy nutritivo, pseudocereal.",ans:"QUINOA"},
+    {q:"Con la Q. Personaje literario que lucha contra molinos de viento.",ans:"QUIJOTE"},
+    {q:"Con la Q. Sustancia amarga del agua tonica.",ans:"QUININA"},
+    {q:"Con la Q. Pais del Golfo Persico cuya capital es Doha.",ans:"QATAR"},
+    {q:"Con la Q. Alimento lacteo solido de muchas variedades.",ans:"QUESO"},
+    {q:"Con la Q. Particula subatomica que forma los protones.",ans:"QUARK"},
+    {q:"Con la Q. Banda britanica con Freddie Mercury.",ans:"QUEEN"},
+    {q:"Con la Q. Municipio de Mexico famoso por sus jardines flotantes.",ans:"XOCHIMILCO",alt:["QUERETARO"]},
+    {q:"Con la Q. Arte de hacer figuras con tiras de papel enrollado.",ans:"QUILLING"},
+  ],
+  R:[
+    {q:"Con la R. Capital de Italia.",ans:"ROMA"},
+    {q:"Con la R. Color del tomate maduro.",ans:"ROJO"},
+    {q:"Con la R. Animal roedor con cola larga que vive en ciudades.",ans:"RATON",alt:["RATA"]},
+    {q:"Con la R. Deporte con pelota ovalada que se lleva con las manos.",ans:"RUGBY"},
+    {q:"Con la R. Pais mas grande del mundo cuya capital es Moscu.",ans:"RUSIA"},
+    {q:"Con la R. Instrumento de percusion, tambor pequeno con palillos.",ans:"REDOBLANTE"},
+    {q:"Con la R. Pelicula de Disney sobre una rata que quiere ser chef.",ans:"RATATOUILLE"},
+    {q:"Con la R. Cantante de Queen que interpreto Bohemian Rhapsody.",ans:"RAMI MALEK",alt:["FREDDIE MERCURY"]},
+    {q:"Con la R. Pelicula de Disney sobre una rata que quiere ser chef.",ans:"RATATOUILLE"},
+    {q:"Con la R. Bebida alcholica destilada de la cana de azucar.",ans:"RON",alt:["CACHACA"]},
+  ],
+  S:[
+    {q:"Con la S. Astro central del sistema solar.",ans:"SOL"},
+    {q:"Con la S. Capital de Chile.",ans:"SANTIAGO"},
+    {q:"Con la S. Pais donde estan Ginebra y Zurich.",ans:"SUIZA"},
+    {q:"Con la S. Pais nordico cuya capital es Estocolmo.",ans:"SUECIA"},
+    {q:"Con la S. Instrumento de viento de metal inventado por Adolphe Sax.",ans:"SAXOFON"},
+    {q:"Con la S. Saga de peliculas de George Lucas con Jedis y Sith.",ans:"STAR WARS"},
+    {q:"Con la S. Serie espanola de Netflix sobre robos de banco.",ans:"SEÑOR",alt:["CASA DE PAPEL"]},
+    {q:"Con la S. Bebida espumante tipica de celebraciones, hecha de uvas.",ans:"SIDRA",alt:["CAVA"]},
+    {q:"Con la S. Animal marino de sangre fria con aleta dorsal.",ans:"SALMON",alt:["TIBURON"]},
+    {q:"Con la S. Filosofo griego que murio bebiendo cicuta.",ans:"SOCRATES"},
+  ],
+  T:[
+    {q:"Con la T. Capital de Japon.",ans:"TOKIO"},
+    {q:"Con la T. Pais asiatico cuya capital es Bangkok.",ans:"TAILANDIA"},
+    {q:"Con la T. Rio que atraviesa la ciudad de Londres.",ans:"TAMESIS"},
+    {q:"Con la T. Instrumento de percusion de parche que se golpea.",ans:"TIMBAL",alt:["TAMBOR"]},
+    {q:"Con la T. Personaje de la Sirenita que es un cangrejo rojo.",ans:"TRITON",alt:["SEBASTIAN"]},
+    {q:"Con la T. Instrumento de viento de metal en forma de U.",ans:"TUBA",alt:["TROMBON"]},
+    {q:"Con la T. Pintura de Miguel Angel en el techo de la Capilla Sixtina.",ans:"TECHO",alt:["FRESCO"]},
+    {q:"Con la T. Plataforma de videos cortos muy popular entre jovenes.",ans:"TIKTOK"},
+    {q:"Con la T. Bebida caliente de hojas que se toma en Inglaterra.",ans:"TE"},
+    {q:"Con la T. Pais de Africa del Norte cuya capital es Tunez.",ans:"TUNEZ"},
+  ],
+  U:[
+    {q:"Con la U. Pais de America del Sur cuya capital es Montevideo.",ans:"URUGUAY"},
+    {q:"Con la U. Planeta del sistema solar con anillos inclinados.",ans:"URANO"},
+    {q:"Con la U. Pais de Europa del Este cuya capital es Kyiv.",ans:"UCRANIA"},
+    {q:"Con la U. Instrumento de cuatro cuerdas originario de Hawaii.",ans:"UKELELE"},
+    {q:"Con la U. Pais de Asia Central cuya capital es Taskent.",ans:"UZBEKISTAN"},
+    {q:"Con la U. Personaje de la Odisea que tarda 20 anos en volver.",ans:"ULISES"},
+    {q:"Con la U. Nombre del rey griego de la Odisea.",ans:"ULISES"},
+    {q:"Con la U. Especie de hongo que crece en el bosque y se come.",ans:"URSINIA",alt:["TRUFA"]},
+    {q:"Con la U. Ciudad italiana con una de las universidades mas antiguas.",ans:"URBINO",alt:["BOLOGNA"]},
+    {q:"Con la U. Personaje de los Simpsons que vende en la tienda Kwik-E-Mart.",ans:"UGANDAN",alt:["APU"]},
+  ],
+  V:[
+    {q:"Con la V. Ciudad italiana famosa por sus canales y gondolas.",ans:"VENECIA"},
+    {q:"Con la V. Segundo planeta del sistema solar.",ans:"VENUS"},
+    {q:"Con la V. Capital de Austria.",ans:"VIENA"},
+    {q:"Con la V. Pais de Sudamerica cuya capital es Caracas.",ans:"VENEZUELA"},
+    {q:"Con la V. Deporte de playa con red y balon.",ans:"VOLEYBOL",alt:["VOLEIBOL"]},
+    {q:"Con la V. Instrumento de cuerda frotada con arco, el mas agudo.",ans:"VIOLIN"},
+    {q:"Con la V. Pais de Asia cuya capital es Hanoi.",ans:"VIETNAM"},
+    {q:"Con la V. Salsa italiana verde a base de albahaca y pino.",ans:"VERDEJO",alt:["PESTO"]},
+    {q:"Con la V. Pintor de la Noche Estrellada que se corto la oreja.",ans:"VAN GOGH"},
+    {q:"Con la V. Personaje de Star Wars enemigo principal vestido de negro.",ans:"VADER",alt:["DARTH VADER"]},
+  ],
+  X:[
+    {q:"Con la X. Instrumento de percusion de laminas de madera.",ans:"XILOFONO"},
+    {q:"Con la X. Tecnica medica que permite ver los huesos.",ans:"XRAY",alt:["RAYOS X"]},
+    {q:"Con la X. Capital del estado mexicano de Veracruz.",ans:"XALAPA"},
+    {q:"Con la X. Numero diez en la numeracion romana.",ans:"X",alt:["DIEZ"]},
+    {q:"Con la X. Fruta de cactus con pulpa roja usada en Mexico.",ans:"XOCONOSTLE"},
+    {q:"Con la X. Grupo de mutantes con poderes del universo Marvel.",ans:"X-MEN"},
+    {q:"Con la X. Municipio de Mexico famoso por sus jardines flotantes.",ans:"XOCHIMILCO"},
+    {q:"Con la X. Nombre del profesor que lidera a los mutantes en Marvel.",ans:"XAVIER",alt:["PROFESOR X"]},
+    {q:"Con la X. Tecnica de impresion en fotocopiadoras, inventada en 1938.",ans:"XEROGRAFIA",alt:["XERO"]},
+    {q:"Con la X. Personaje de la mitologia griega que toco la lira en el inframundo.",ans:"ORFEO",alt:["XANTIPO"]},
+  ],
 };
 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
@@ -664,7 +937,9 @@ window.addEventListener('load',()=>{
   onValue(cr,snap=>{
     const online=!!snap.val();
     const b=document.getElementById('conn-badge');
-    if(b){ b.className='badge '+(online?'online':'offline'); b.innerHTML='<div class="bdot"></div> '+(online?'Conectado':'Sin conexion'); }
+    if(b){ b.className='badge '+(online?'online':'offline'); b.innerHTML='<div class="bdot"></div>'+(online?'Conectado':'Sin conexion'); }
+    const gb=document.getElementById('game-badge');
+    if(gb){ gb.className='badge '+(online?'online':'offline'); gb.innerHTML='<div class="bdot"></div>'+(online?'Online':'Sin conexion'); }
     ['btn-create','btn-join-show'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=!online; });
   });
 });
@@ -771,8 +1046,8 @@ function renderGame(data){
     document.getElementById('name-'+i).textContent=pl[i].name;
     document.getElementById('score-'+i).textContent=pl[i].score||0;
     document.getElementById('meta-'+i).textContent=(pl[i].correct||0)+' correctas · '+(pl[i].passed||0)+' pasadas';
-    document.getElementById('card-'+i).className='player-card'+(i===data.currentTurn?' active':'')+(i===myIdx?' me-card':'');
-    document.getElementById('me-tag-'+i).style.display=i===myIdx?'block':'none';
+    document.getElementById('card-'+i).className='p-card'+(i===data.currentTurn?' active':'')+(i===myIdx?' me':'');
+    document.getElementById('you-tag-'+i).style.display=i===myIdx?'block':'none';
   });
   document.getElementById('tab-p0').textContent=pl[0].name;
   document.getElementById('tab-p1').textContent=pl[1].name;
@@ -782,6 +1057,7 @@ function renderGame(data){
   document.getElementById('spec-bar').style.display=mine?'none':'block';
   document.getElementById('spec-name').textContent=pl[data.currentTurn].name;
 
+  const qw=document.getElementById('q-wrap'); if(qw) qw.className='q-wrap'+(al?' has-active':'');
   if(!document.getElementById('circle-A')) drawRosco();
   LETTERS.forEach(l=>updateLetter(l,data));
 
@@ -795,7 +1071,7 @@ function renderGame(data){
     document.getElementById('q-hint').textContent='La respuesta empieza con la letra '+al;
   } else {
     document.getElementById('q-text').textContent=mine?'Haz clic en una letra del rosco para empezar':'Esperando al otro jugador...';
-    document.getElementById('q-hint').textContent='';
+    const qh2=document.getElementById('q-hint'); qh2.textContent=''; qh2.style.display='none';
   }
 
   const fb=document.getElementById('fb');
@@ -825,7 +1101,7 @@ function myKey(){ return myRole==='host'?'host':'guest'; }
 function drawRosco(){
   const svg=document.getElementById('rosco-svg');
   if(!svg) return;
-  const cx=160,cy=160,r=138,n=LETTERS.length;
+  const cx=165,cy=165,r=142,n=LETTERS.length;
   svg.innerHTML='';
 
   // Ring background
